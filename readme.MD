@@ -1,11 +1,11 @@
 # Simple neural network written in Rust
 
-A simple implementation of a neural network from scratch in Rust, based on my recollection of what I have learned from Adrew Ng's Deep Learning course on Coursera
+A simple implementation of a neural network from scratch in Rust, based on my recollection of what I have learned from Andrew Ng's Deep Learning course on Coursera
 two years ago.
 
 ## Description
 The application is a 3 layer neural network that reads in a sample banknote authentication data (example.txt)
-with 4 features (X) and a binary output (Y) which is either 0 (no) and 1 (yes) classication.
+with 4 features (X) and a binary output (Y) which is either 0 (no) and 1 (yes) classification.
 
 The model consists of 3 layers
 - Layer 1 (Input)
