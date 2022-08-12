@@ -27,9 +27,9 @@ If all of these sounds alient to you, please have a look at this gentle introduc
 https://iamtrask.github.io/2015/07/12/basic-python-network/
 
 ## Getting Started
-- Make sure you have Rust installed. Refer to xxx.
+- Make sure you have Rust installed. Please refer to https://www.rust-lang.org/
 - Open your terminal
-- Check out this project git clone xxxx
+- Check out this project by using the command: git clone git@github.com:kenny-goh/rust-simple-neural-network.git
 - Navigate to the project folder
 ```shell
 Cargo build #This will build the project
