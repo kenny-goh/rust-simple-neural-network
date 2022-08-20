@@ -25,6 +25,11 @@ fn bank_note_auth_example() {
     println!("Accuracy: {} %", NeuralNetwork3Layer::calc_accuracy(&Y, &predictions));
 }
 
+/// XOR
+/// [0, 0] = [0]
+/// [0, 1] = [1]
+/// [1, 0] = [1]
+/// [1, 1] - [0]
 fn xor_example() {
     let x_train:Array2<f64> = array![[0., 0.], [0., 1.], [1., 0.], [1., 1.],[1., 1.],[1., 1.],[1., 1.]].reversed_axes();
     let y_train:Array2<f64> = array![[0.], [1.], [1.], [0.], [0.], [0.], [0.]].reversed_axes();
