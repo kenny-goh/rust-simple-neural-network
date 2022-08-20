@@ -1,12 +1,11 @@
 use ndarray::prelude::*;
-use std::convert::TryInto;
 use std::fs;
 
 mod lib;
 
 use lib::*;
 
-fn main() {
+fn bank_note_auth_example() {
     let raw_file_content =
         fs::read_to_string("./example.txt").expect("File is missing!");
 
@@ -25,3 +24,26 @@ fn main() {
 
     println!("Accuracy: {} %", NeuralNetwork3Layer::calc_accuracy(&Y, &predictions));
 }
+
+fn xor_example() {
+    let x_train:Array2<f64> = array![[0., 0.], [0., 1.], [1., 0.], [1., 1.],[1., 1.],[1., 1.],[1., 1.]].reversed_axes();
+    let y_train:Array2<f64> = array![[0.], [1.], [1.], [0.], [0.], [0.], [0.]].reversed_axes();
+
+    let x_predict:Array2<f64> = array![[0., 0.], [0., 1.], [1., 0.], [1., 1.],[0., 1.],[0., 1.],[0., 1.]].reversed_axes();
+    let y_predict:Array2<f64> = array![[0.], [1.], [1.], [0.],[1.],[1.],[1.]].reversed_axes();
+
+    let parameters = NeuralNetwork3Layer::train(&x_train, &y_train, 10, 2000, true);
+    let predictions = NeuralNetwork3Layer::predict(&parameters, &x_predict);
+    let Y = y_predict.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 });
+
+    println!("predict: {:?}", predictions);
+    println!("Accuracy: {} %", NeuralNetwork3Layer::calc_accuracy(&Y, &predictions));
+}
+
+
+fn main() {
+    // bank_note_auth_example();
+    xor_example();
+}
+
+
