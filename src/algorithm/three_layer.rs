@@ -6,9 +6,9 @@ use ndarray_rand::RandomExt;
 use std::collections::HashMap;
 use std::ops::Neg;
 
-pub struct NeuralNetwork3Layer {}
+pub struct NeuralNet {}
 
-impl NeuralNetwork3Layer {
+impl NeuralNet {
     /// Check layer sizes
     /// Arguments:
     ///  X : input dataset of shape (input size, number of examples)
@@ -62,9 +62,9 @@ impl NeuralNetwork3Layer {
         let W2 = parameters.get("W2").expect("Expected W2 but not found");
 
         let Z1 = W1.dot(X);
-        let A1 = NeuralNetwork3Layer::tanh(&Z1);
+        let A1 = NeuralNet::tanh(&Z1);
         let Z2 = W2.dot(&A1);
-        let A2 = NeuralNetwork3Layer::sigmoid(&Z2);
+        let A2 = NeuralNet::sigmoid(&Z2);
 
         let mut cache = HashMap::new();
         cache.insert("Z1".to_string(), Z1);
@@ -178,22 +178,22 @@ impl NeuralNetwork3Layer {
         num_iterations: i32,
         print_cost: bool,
     ) -> HashMap<String, Array2<f64>> {
-        let (n_x, n_y) = NeuralNetwork3Layer::layer_sizes(&X, &Y);
-        let mut parameters = NeuralNetwork3Layer::init_parameters(n_x, n_h, n_y);
+        let (n_x, n_y) = NeuralNet::layer_sizes(&X, &Y);
+        let mut parameters = NeuralNet::init_parameters(n_x, n_h, n_y);
 
         // Loop (gradient descent)
         for i in 0..num_iterations {
             // Forward propagation. Inputs: "X, parameters". Outputs: "A2, cache".
-            let (A2, cache) = NeuralNetwork3Layer::forward_propagation(X, &parameters);
+            let (A2, cache) = NeuralNet::forward_propagation(X, &parameters);
 
             // Cost function . Inputs : "A2, Y, parameters". Outputs: "cost".
-            let cost = NeuralNetwork3Layer::compute_cost(&A2, &Y);
+            let cost = NeuralNet::compute_cost(&A2, &Y);
 
             // Backpropagation.Inputs: "parameters, cache, X, Y". Outputs: "grads".
-            let grads = NeuralNetwork3Layer::backward_propagation(&parameters, &cache, X, Y);
+            let grads = NeuralNet::backward_propagation(&parameters, &cache, X, Y);
 
             // Gradient descent parameter update . Inputs : "parameters, grads". Outputs: "parameters".
-            parameters = NeuralNetwork3Layer::update_parameters(&parameters, &grads, 1.2);
+            parameters = NeuralNet::update_parameters(&parameters, &grads, 1.2);
 
             // Print the cost every 1000 iterations
             if print_cost && i % 100 == 0 {
@@ -214,8 +214,14 @@ impl NeuralNetwork3Layer {
     ///
     pub fn predict(parameters: &HashMap<String, Array2<f64>>, X: &Array2<f64>) -> Array2<f64> {
         // Computes probabilities using forward propagation, and classifies to 0/1 using 0.5 as the threshold.
-        let (A2, cache) = NeuralNetwork3Layer::forward_propagation(X, parameters);
+        let (A2, cache) = NeuralNet::forward_propagation(X, parameters);
         A2.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 })
+    }
+
+    pub fn predict_as_probability(parameters: &HashMap<String, Array2<f64>>, X: &Array2<f64>) -> Array2<f64> {
+        // Computes probabilities using forward propagation, and classifies to 0/1 using 0.5 as the threshold.
+        let (A2, cache) = NeuralNet::forward_propagation(X, parameters);
+        A2
     }
 
     /// Using the learned parameters, predicts a class for each example.txt in X
