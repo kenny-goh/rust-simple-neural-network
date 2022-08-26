@@ -1,7 +1,6 @@
 use std::fs;
 use std::path::Path;
 use ndarray::{array, Array2};
-use crate::{Utils};
 use crate::algorithm::three_layer::NeuralNet;
 use crate::utils::Utils;
 
