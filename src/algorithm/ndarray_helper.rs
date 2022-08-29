@@ -9,7 +9,6 @@ pub struct NDArrayHelper {}
 
 impl NDArrayHelper {
 
-
     pub fn sigmoid(Z: &Array2<f32>) -> Array2<f32> {
         1. / (1. + (Z.mapv(|x| (-x).exp())))
     }

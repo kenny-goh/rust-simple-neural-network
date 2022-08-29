@@ -38,10 +38,10 @@ impl NeuralNet {
         // let mut rng = Isaac64Rng::seed_from_u64(seed);
 
         let mut parameters = HashMap::new();
-        let L = layer_dims.len();
-        for l in 1..L {
-            let W: Matrix2D = Array::random((layer_dims[l], layer_dims[l - 1]), Uniform::new(-1., 1.)) * 0.001_f32;
-            parameters.insert(format!("W{}", l), W);
+        let num_of_layers = layer_dims.len();
+        for l in 1..num_of_layers {
+            let weights: Matrix2D = Array::random((layer_dims[l], layer_dims[l - 1]), Uniform::new(-1., 1.)) * 0.001_f32;
+            parameters.insert(format!("W{}", l), weights);
             parameters.insert(format!("b{}", l), Array2::zeros((layer_dims[l], 1)));
             // assert_eq!(parameters.get(&format!("W{}", l)).unwrap().shape().to_vec(), [layer_dims[l], layer_dims[l - 1]]);
         }
@@ -49,109 +49,109 @@ impl NeuralNet {
         parameters
     }
 
-    fn linear_forward(A: &Matrix2D, parameters: &HashMap<String, Matrix2D>, layer_index: usize) -> LinearForwardTuple {
-        let W = parameters.get(&format!("W{}", layer_index)).unwrap();
-        let b = parameters.get(&format!("b{}", layer_index)).unwrap();
+    fn linear_forward(activation: &Matrix2D, parameters: &HashMap<String, Matrix2D>, layer_index: usize) -> LinearForwardTuple {
+        let weights = parameters.get(&format!("W{}", layer_index)).unwrap();
+        let biases = parameters.get(&format!("b{}", layer_index)).unwrap();
 
-        let Z = W.dot(A) + b;
-        let cache = (A.clone(), layer_index);
-        return (Z, cache);
+        let z = weights.dot(activation) + biases;
+        let cache = (activation.clone(), layer_index);
+        return (z, cache);
     }
 
-    fn linear_activation_forward(A_prev: &Matrix2D,
+    fn linear_activation_forward(a_prev: &Matrix2D,
                                  parameters: &HashMap<String, Matrix2D>,
                                  layer_index: usize,
                                  activation: &Activation) -> LinearActivationForwardTuple {
         return match activation {
             Activation::Sigmoid => {
-                let (Z, linear_cache) = NeuralNet::linear_forward(A_prev, parameters, layer_index);
-                let (A, activation_cache) = NeuralNet::sigmoid(&Z);
+                let (z, linear_cache) = NeuralNet::linear_forward(a_prev, parameters, layer_index);
+                let (a, activation_cache) = NeuralNet::sigmoid(&z);
                 let cache = (linear_cache, activation_cache.clone());
-                (A, cache)
+                (a, cache)
             }
             Activation::LeakyRelu => {
-                let (Z, linear_cache) = NeuralNet::linear_forward(A_prev, parameters, layer_index);
-                let (A, activation_cache) = NeuralNet::leaky_relu(&Z);
+                let (z, linear_cache) = NeuralNet::linear_forward(a_prev, parameters, layer_index);
+                let (a, activation_cache) = NeuralNet::leaky_relu(&z);
                 let cache = (linear_cache, activation_cache.clone());
-                (A, cache)
+                (a, cache)
             }
             Activation::Tanh => {
-                let (Z, linear_cache) = NeuralNet::linear_forward(A_prev, parameters, layer_index);
-                let (A, activation_cache) = NeuralNet::tanh(&Z);
+                let (z, linear_cache) = NeuralNet::linear_forward(a_prev, parameters, layer_index);
+                let (a, activation_cache) = NeuralNet::tanh(&z);
                 let cache = (linear_cache, activation_cache.clone());
-                (A, cache)
+                (a, cache)
             }
         };
     }
 
-    fn l_model_forward(X: &Matrix2D,
+    fn l_model_forward(x_input: &Matrix2D,
                        parameters: &HashMap<String, Matrix2D>,
                        layer_activations: &Vec<Activation>) -> LinearModelForwardTuple {
         let mut caches: Vec<LinearForwardAndActivationCache> = vec![];
-        let mut A = X.clone();
-        let L = parameters.len() / 2;
+        let mut activation = x_input.clone();
+        let num_layers = parameters.len() / 2;
 
         //Implement[LINEAR -> RELU]*(L-1). Add "cache" to the "caches" list.
-        for l in 1..L {
-            let A_prev = A.clone();
+        for l in 1..num_layers {
+            let prev_activation = activation.clone();
 
-            let (A_, cache) = NeuralNet::linear_activation_forward(
-                &A_prev,
+            let (activation_index_l, cache) = NeuralNet::linear_activation_forward(
+                &prev_activation,
                 parameters,
                 l,
                 layer_activations.get(l).unwrap());
-            A = A_;
+            activation = activation_index_l;
             caches.push(cache);
         }
 
         // Implement LINEAR -> SIGMOID. Add "cache" to the "caches" list.
-        let (AL, cache) = NeuralNet::linear_activation_forward(
-            &A,
+        let (activation_last, cache) = NeuralNet::linear_activation_forward(
+            &activation,
             parameters,
-            L,
-            layer_activations.get(L).unwrap());
+            num_layers,
+            layer_activations.get(num_layers).unwrap());
 
         caches.push(cache);
 
-        (AL, caches)
+        (activation_last, caches)
     }
 
-    fn linear_backward(parameters: &HashMap<String, Matrix2D>, cache: &LinearForwardCache, dZ: &Matrix2D) -> LinearBackwardTriple {
-        let (A_prev, layer_index) = cache;
+    fn linear_backward(parameters: &HashMap<String, Matrix2D>, cache: &LinearForwardCache, derivative_z: &Matrix2D) -> LinearBackwardTriple {
+        let (prev_activation, layer_index) = cache;
 
-        let W = parameters.get(&format!("W{}", layer_index)).unwrap();
-        let b = parameters.get(&format!("b{}", layer_index)).unwrap();
+        let weights = parameters.get(&format!("W{}", layer_index)).unwrap();
+        //let biases = parameters.get(&format!("b{}", layer_index)).unwrap();
 
-        let m = A_prev.len_of(Axis(1)) as f32;
+        let number_of_instances = prev_activation.len_of(Axis(1)) as f32;
 
-        let dW = (dZ.dot(&A_prev.t())) * (1.0 / m);
-        let db = arr2(&[[dZ.sum()]]) * (1.0 / m);
+        let derivative_weights = (derivative_z.dot(&prev_activation.t())) * (1.0 / number_of_instances);
+        let derivative_biases = arr2(&[[derivative_z.sum()]]) * (1.0 / number_of_instances);
 
-        let dA_prev = W.t().dot(dZ);
+        let derivative_prev_activation = weights.t().dot(derivative_z);
 
-        (dA_prev, dW, db)
+        (derivative_prev_activation, derivative_weights, derivative_biases)
     }
 
     fn linear_activation_backward(parameters: &HashMap<String, Matrix2D>,
-                                  dA: &Matrix2D,
+                                  derivative_activation: &Matrix2D,
                                   cache: &LinearForwardAndActivationCache,
                                   activation: &Activation) -> LinearActivationBackwardTriple {
         let (linear_cache, activation_cache) = cache;
         return match activation {
             Activation::LeakyRelu => {
-                let dZ = NeuralNet::leaky_relu_backward(&dA, &activation_cache);
-                let (dA_prev, dW, db) = NeuralNet::linear_backward(parameters, linear_cache, &dZ);
-                (dA_prev, dW, db)
+                let dz = NeuralNet::leaky_relu_backward(&derivative_activation, &activation_cache);
+                let (da_prev, dw, db) = NeuralNet::linear_backward(parameters, linear_cache, &dz);
+                (da_prev, dw, db)
             }
             Activation::Sigmoid => {
-                let dZ = NeuralNet::sigmoid_backward(&dA, &activation_cache);
-                let (dA_prev, dW, db) = NeuralNet::linear_backward(parameters, linear_cache, &dZ);
-                (dA_prev, dW, db)
+                let dz = NeuralNet::sigmoid_backward(&derivative_activation, &activation_cache);
+                let (da_prev, dw, db) = NeuralNet::linear_backward(parameters, linear_cache, &dz);
+                (da_prev, dw, db)
             }
             Activation::Tanh => {
-                let dZ = NeuralNet::tanh_backward(&dA, &activation_cache);
-                let (dA_prev, dW, db) = NeuralNet::linear_backward(parameters, linear_cache, &dZ);
-                (dA_prev, dW, db)
+                let dz = NeuralNet::tanh_backward(&derivative_activation, &activation_cache);
+                let (da_prev, dw, db) = NeuralNet::linear_backward(parameters, linear_cache, &dz);
+                (da_prev, dw, db)
             }
         };
     }
@@ -178,69 +178,68 @@ impl NeuralNet {
     fn l_model_backward(cost: &CostType,
                         parameters: &HashMap<String, Matrix2D>,
                         layer_activations: &Vec<Activation>,
-                        AL: &Matrix2D,
-                        Y: &Matrix2D,
+                        activation_last: &Matrix2D,
+                        y_output: &Matrix2D,
                         caches: Vec<LinearForwardAndActivationCache>) -> HashMap<String, Matrix2D> {
         let mut grads = HashMap::new();
-        let L = caches.len();
+        let num_layers = caches.len();
 
-        let dAL = Self::derivative_cost_output(cost, AL, Y);
+        let da_last = Self::derivative_cost_output(cost, activation_last, y_output);
 
         // // Lth layer (SIGMOID -> LINEAR) gradients. Inputs: "dAL, current_cache". Outputs: "grads["dAL-1"], grads["dWL"], grads["dbL"]
-        let current_cache = &caches.get(L - 1).unwrap();
+        let current_cache = &caches.get(num_layers - 1).unwrap();
 
-        let (dA_prev, dWL, dbL) = NeuralNet::linear_activation_backward(parameters,
-                                                                        &dAL,
-                                                                        &current_cache,
-                                                                        layer_activations.get(L).unwrap());
-        grads.insert(format!("dA{}", (L - 1)), dA_prev);
-        grads.insert(format!("dW{}", L), dWL);
-        grads.insert(format!("db{}", L), dbL);
+        let (da_prev, dw_last, db_last) = NeuralNet::linear_activation_backward(parameters,
+                                                                                &da_last,
+                                                                                &current_cache,
+                                                                                layer_activations.get(num_layers).unwrap());
+        grads.insert(format!("dA{}", (num_layers - 1)), da_prev);
+        grads.insert(format!("dW{}", num_layers), dw_last);
+        grads.insert(format!("db{}", num_layers), db_last);
 
         // Loop from l = L - 2 to 0
-        for l in (0..=(L - 2)).rev() {
+        for l in (0..=(num_layers - 2)).rev() {
             // lth layer :(RELU -> LINEAR) gradients.
             // Inputs: "grads["dA" + str(l + 1)], current_cache". Outputs: "grads["dA" + str(l)] , grads["dW" + str(l + 1)] , grads["db" + str(l + 1)]
             let current_cache = &caches[l];
 
-            let dAl_plus_1 = grads.get(&format!("dA{}", (l + 1))).unwrap();
+            let da_next = grads.get(&format!("dA{}", (l + 1))).unwrap();
 
-            let (dA_prev_temp, dW_temp, db_temp) = NeuralNet::linear_activation_backward(
+            let (da_prev_temp, dw_temp, db_temp) = NeuralNet::linear_activation_backward(
                 parameters,
-                dAl_plus_1,
+                da_next,
                 current_cache,
                 layer_activations.get(l).unwrap(),
             );
-            grads.insert(format!("dA{}", l), dA_prev_temp);
-            grads.insert(format!("dW{}", (l + 1)), dW_temp);
+            grads.insert(format!("dA{}", l), da_prev_temp);
+            grads.insert(format!("dW{}", (l + 1)), dw_temp);
             grads.insert(format!("db{}", (l + 1)), db_temp);
         }
         grads
     }
 
-    fn derivative_cost_output(cost: &CostType, AL: &Matrix2D, Y: &Matrix2D) -> ArrayBase<OwnedRepr<f32>, Dim<[Ix; 2]>> {
+    fn derivative_cost_output(cost: &CostType, activation_last: &Matrix2D, y_output: &Matrix2D) -> ArrayBase<OwnedRepr<f32>, Dim<[Ix; 2]>> {
         return match cost {
             CostType::CrossEntropy => {
-                let Y_vec = Y.iter().map(|f| *f).collect::<Vec<f32>>();
-                let AL_vec = AL.iter().map(|f| *f).collect::<Vec<f32>>();
+                let y_vec = y_output.iter().map(|f| *f).collect::<Vec<f32>>();
+                let al_vec = activation_last.iter().map(|f| *f).collect::<Vec<f32>>();
 
                 // cross entropy
-                let dAL = Y_vec
+                let da_last = y_vec
                     .iter()
-                    .zip(AL_vec)
+                    .zip(al_vec)
                     .map(|(y, a)| {
                         let v = -(y / a - (1.0 - y) / (1.0 - a));
                         if v.is_nan() { 0.0 } else { v }
                     })
                     .collect::<Vec<f32>>();
 
-                let shape = AL.shape();
+                let shape = activation_last.shape();
                 let (row, col) = (shape[0], shape[1]);
-                let dAL = Array::from_shape_vec((row, col), dAL).unwrap();
-                dAL
+                Array::from_shape_vec((row, col), da_last).unwrap()
             }
             CostType::Quadratic => {
-                AL - Y
+                activation_last - y_output
             }
         };
     }
@@ -249,27 +248,27 @@ impl NeuralNet {
                          grads: &HashMap<String, Matrix2D>,
                          learning_rate: f32) -> HashMap<String, Matrix2D> {
         let mut parameters = parameters_in.clone();
-        let L = parameters.len() / 2;
-        for l in 0..L {
+        let num_layers = parameters.len() / 2;
+        for l in 0..num_layers {
             let l_next = l + 1;
 
-            let W = parameters.get(&format!("W{}", l_next)).unwrap();
-            let b = parameters.get(&format!("b{}", l_next)).unwrap();
+            let weights = parameters.get(&format!("W{}", l_next)).unwrap();
+            let biases = parameters.get(&format!("b{}", l_next)).unwrap();
 
-            let dW = grads.get(&format!("dW{}", l_next)).unwrap();
-            let db = grads.get(&format!("db{}", l_next)).unwrap();
+            let derivative_weights = grads.get(&format!("dW{}", l_next)).unwrap();
+            let derivative_biases = grads.get(&format!("db{}", l_next)).unwrap();
 
-            let _W = W - (dW * learning_rate);
-            let _b = b - (db * learning_rate);
+            let weights_delta = weights - (derivative_weights * learning_rate);
+            let biases_delta = biases - (derivative_biases * learning_rate);
 
-            parameters.insert(format!("W{}", l_next), _W);
-            parameters.insert(format!("b{}", l_next), _b);
+            parameters.insert(format!("W{}", l_next), weights_delta);
+            parameters.insert(format!("b{}", l_next), biases_delta);
         }
         parameters
     }
 
-    pub fn train(X: &Matrix2D,
-                 Y: &Matrix2D,
+    pub fn train(x_input: &Matrix2D,
+                 y_output: &Matrix2D,
                  layers_dims: Vec<usize>,
                  layers_activation: &Vec<Activation>,
                  learning_rate: f32,
@@ -282,13 +281,13 @@ impl NeuralNet {
         for i in 0..iterations {
 
             // Forward propagation: [LINEAR -> RELU]*(L-1) -> LINEAR -> SIGMOID.
-            let (AL, caches) = NeuralNet::l_model_forward(&X, &parameters, layers_activation);
+            let (activation_last, caches) = NeuralNet::l_model_forward(&x_input, &parameters, layers_activation);
 
             // Compute cost.
-            let cost = NeuralNet::compute_cost(&cost_type, &AL, &Y);
+            let cost = NeuralNet::compute_cost(&cost_type, &activation_last, &y_output);
 
             // Backward propagation.
-            let grads = NeuralNet::l_model_backward(cost_type, &parameters, layers_activation, &AL, &Y, caches);
+            let grads = NeuralNet::l_model_backward(cost_type, &parameters, layers_activation, &activation_last, &y_output, caches);
 
             // println!("grads {:?}", grads);
 
@@ -297,10 +296,10 @@ impl NeuralNet {
 
             // Print the cost every 100 training example
             if print_cost && i % 1 == 0 {
-                let _AL = AL.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 });
-                let _Y = Y.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 });
-                let accuracy = NeuralNet::calc_accuracy(&_Y, &_AL);
-                println!("[{}] Training Accuracy: {:.2}, Cost: {:.8}", i, NeuralNet::calc_accuracy(&_Y, &_AL), cost);
+                let al_binary = activation_last.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 });
+                let y_output_binary = y_output.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 });
+                let accuracy = NeuralNet::calc_accuracy(&y_output_binary, &al_binary);
+                println!("[{}] Training Accuracy: {:.2}, Cost: {:.8}", i, NeuralNet::calc_accuracy(&y_output_binary, &al_binary), cost);
                 if accuracy >= 100.0 {
                     break;
                 }
@@ -309,56 +308,55 @@ impl NeuralNet {
         parameters
     }
 
-    pub fn predict(parameters: &HashMap<String, Matrix2D>, layer_activations: &Vec<Activation>, X: &Matrix2D) -> Matrix2D {
+    pub fn predict(parameters: &HashMap<String, Matrix2D>, layer_activations: &Vec<Activation>, x_input: &Matrix2D) -> Matrix2D {
         //Computes probabilities using forward propagation, and classifies to 0/1 using 0.5 as the threshold.
-        let (A, cache) = NeuralNet::l_model_forward(&X, &parameters, layer_activations);
-        A.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 })
+        let (activation, _) = NeuralNet::l_model_forward(&x_input, &parameters, layer_activations);
+        activation.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 })
     }
 
-    pub fn predict_as_probability(parameters: &HashMap<String, Matrix2D>, layer_activations: &Vec<Activation>, X: &Matrix2D) -> Matrix2D {
+    pub fn predict_as_probability(parameters: &HashMap<String, Matrix2D>, layer_activations: &Vec<Activation>, x_input: &Matrix2D) -> Matrix2D {
         // Computes probabilities using forward propagation, and classifies to 0/1 using 0.5 as the threshold.
-        let (A, cache) = NeuralNet::l_model_forward(&X, &parameters, layer_activations);
-        A
+        NeuralNet::l_model_forward(&x_input, &parameters, layer_activations).0
     }
 
-    pub fn compute_cost(cost: &CostType, AL: &Matrix2D, Y: &Matrix2D) -> f32 {
+    pub fn compute_cost(cost: &CostType, activation: &Matrix2D, y_output: &Matrix2D) -> f32 {
         return match cost {
             CostType::CrossEntropy => {
-                let m = Y.len_of(Axis(1)) as f32;
-                let a = AL.mapv(|x| f32::ln(x)) * Y;
-                let b = (1. - Y) * (1. - AL).mapv(|x| f32::ln(x));
+                let m = y_output.len_of(Axis(1)) as f32;
+                let a = activation.mapv(|x| f32::ln(x)) * y_output;
+                let b = (1. - y_output) * (1. - activation).mapv(|x| f32::ln(x));
                 let log_probs = a + b;
                 let cost = log_probs.sum() * (-1.0 / m);
                 if f32::is_nan(cost) { 0. } else { cost }
             }
             CostType::Quadratic => {
-                let m = Y.len_of(Axis(1)) as f32;
-                ((AL - Y).mapv(|x| f32::powi(x, 2))).sum() * 1. / m
+                let m = y_output.len_of(Axis(1)) as f32;
+                ((activation - y_output).mapv(|x| f32::powi(x, 2))).sum() * 1. / m
             }
         };
     }
 
-    fn sigmoid(Z: &Matrix2D) -> (Matrix2D, &Matrix2D) {
-        let A = NDArrayHelper::sigmoid(Z);
-        return (A, Z);
+    fn sigmoid(z: &Matrix2D) -> (Matrix2D, &Matrix2D) {
+        let a = NDArrayHelper::sigmoid(z);
+        return (a, z);
     }
 
-    fn tanh(Z: &Matrix2D) -> (Matrix2D, &Matrix2D) {
-        let A = NDArrayHelper::tanh(Z);
-        return (A, Z);
+    fn tanh(z: &Matrix2D) -> (Matrix2D, &Matrix2D) {
+        let a = NDArrayHelper::tanh(z);
+        return (a, z);
     }
 
-    fn leaky_relu(Z: &Matrix2D) -> (Matrix2D, &Matrix2D) {
-        let A = Z.mapv(|x| f32::max(0.01, x));
-        return (A, Z);
+    fn leaky_relu(z: &Matrix2D) -> (Matrix2D, &Matrix2D) {
+        let a = z.mapv(|x| f32::max(0.01, x));
+        return (a, z);
     }
 
-    fn tanh_backward(dA: &Matrix2D, activation: &Matrix2D) -> Matrix2D {
-        dA * (1.0 - (activation.mapv(|z| z.powi(2))))
+    fn tanh_backward(da: &Matrix2D, activation: &Matrix2D) -> Matrix2D {
+        da * (1.0 - (activation.mapv(|z| z.powi(2))))
     }
 
-    fn sigmoid_backward(dA: &Matrix2D, activation_cache: &Matrix2D) -> Matrix2D {
-        dA * Self::sigmoid_derivative(activation_cache)
+    fn sigmoid_backward(da: &Matrix2D, activation_cache: &Matrix2D) -> Matrix2D {
+        da * Self::sigmoid_derivative(activation_cache)
     }
 
     fn sigmoid_derivative(activation: &Matrix2D) -> Matrix2D {
@@ -366,12 +364,12 @@ impl NeuralNet {
         (NDArrayHelper::sigmoid(activation) * (1. - NDArrayHelper::sigmoid(activation)))
     }
 
-    fn leaky_relu_backward(dA: &Matrix2D, activation_cache: &Matrix2D) -> Matrix2D {
-        dA * Self::leaky_relu_derivative(activation_cache)
+    fn leaky_relu_backward(da: &Matrix2D, activation_cache: &Matrix2D) -> Matrix2D {
+        da * Self::leaky_relu_derivative(activation_cache)
     }
 
-    fn leaky_relu_derivative(activation: &Matrix2D) -> Matrix2D {
-        activation.mapv(|x| if x < 0. { 0.01 } else { 1. })
+    fn leaky_relu_derivative(a: &Matrix2D) -> Matrix2D {
+        a.mapv(|x| if x < 0. { 0.01 } else { 1. })
     }
 
     /// Using the learned parameters, predicts a class for each example.txt in X
@@ -382,13 +380,13 @@ impl NeuralNet {
     ///
     /// Returns
     /// predictions : vector of predictions of the model
-    pub fn calc_accuracy(Y1: &Matrix2D, Y2: &Matrix2D) -> f32 {
+    pub fn calc_accuracy(y1: &Matrix2D, y2: &Matrix2D) -> f32 {
         // pretty sure its possible to do this via matrix operations.
-        let size = Y1.len_of(Axis(1)) as f32;
+        let size = y1.len_of(Axis(1)) as f32;
         let mut index: usize = 0;
         let mut matches = 0_f32;
-        let vec2 = Y2.clone().into_raw_vec();
-        for x in Y1.clone().into_raw_vec() {
+        let vec2 = y2.clone().into_raw_vec();
+        for x in y1.clone().into_raw_vec() {
             if x == *vec2.get(index).unwrap() {
                 matches += 1.;
             }
