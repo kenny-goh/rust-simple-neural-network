@@ -1,10 +1,4 @@
-use ndarray::array;
-use ndarray_stats::{
-    errors::{EmptyInput, MinMaxError, QuantileError},
-    interpolate::{Higher, Interpolate, Linear, Lower, Midpoint, Nearest},
-    Quantile1dExt, QuantileExt,
-};
-
+#[allow(dead_code, unused_imports)]
 mod algorithm;
 mod examples;
 mod utils;

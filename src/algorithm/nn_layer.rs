@@ -1,9 +1,9 @@
 use std::collections::HashMap;
-use ndarray::{arr2, Array, Array2, ArrayBase, Axis, OwnedRepr, ShapeBuilder, Ix2, s, Dim, Ix};
+use ndarray::{arr2, Array, Array2, ArrayBase, Axis, OwnedRepr, Dim, Ix};
 use ndarray_rand::RandomExt;
 use rand::distributions::Uniform;
-use rand_isaac::Isaac64Rng;
-use ndarray_rand::rand::SeedableRng;
+// use rand_isaac::Isaac64Rng;
+// use ndarray_rand::rand::SeedableRng;
 use crate::algorithm::ndarray_helper::NDArrayHelper;
 
 pub type Matrix2D = Array2<f32>;
@@ -361,7 +361,7 @@ impl NeuralNet {
 
     fn sigmoid_derivative(activation: &Matrix2D) -> Matrix2D {
         //σ(x)(1−σ(x))
-        (NDArrayHelper::sigmoid(activation) * (1. - NDArrayHelper::sigmoid(activation)))
+        NDArrayHelper::sigmoid(activation) * (1. - NDArrayHelper::sigmoid(activation))
     }
 
     fn leaky_relu_backward(da: &Matrix2D, activation_cache: &Matrix2D) -> Matrix2D {

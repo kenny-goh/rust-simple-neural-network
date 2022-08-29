@@ -1,6 +1,7 @@
+#[allow(dead_code, unused_imports)]
 use std::{f32, fs};
 use std::path::Path;
-use ndarray::{arr2, array, Array2};
+use ndarray::{arr2, Array2};
 use crate::algorithm::nn_layer::{Activation, CostType, NeuralNet};
 use crate::utils::Utils;
 
@@ -49,9 +50,9 @@ pub fn checkout_bot_detector() {
     }
 
     let predictions = NeuralNet::predict(&parameters, &layer_activation,&x_predict);
-    let Y = y_predict.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 });
+    let y = y_predict.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 });
 
-    println!("Test Accuracy: {} %", NeuralNet::calc_accuracy(&Y, &predictions));
+    println!("Test Accuracy: {} %", NeuralNet::calc_accuracy(&y, &predictions));
 
     // let x_single:Array2<f32> = array![[0. / SCALING_DURATION,
     //     2. / SCALING_CLICK,
@@ -85,9 +86,9 @@ fn split_training_data(lines: &Vec<&str>, split_ratio: f32) -> (Array2<f32>, Arr
         rows_y.push(row_y);
     }
 
-    let X = arr2(rows_x[..].try_into().unwrap()).reversed_axes();
-    let Y = arr2(rows_y[..].try_into().unwrap()).reversed_axes();
-    (X, Y)
+    let x = arr2(rows_x[..].try_into().unwrap()).reversed_axes();
+    let y = arr2(rows_y[..].try_into().unwrap()).reversed_axes();
+    (x, y)
 }
 
 
@@ -113,7 +114,7 @@ fn split_test_data(lines: &Vec<&str>, split_ratio: f32) -> (Array2<f32>, Array2<
         rows_y.push(row_y);
     }
 
-    let X = arr2(rows_x[..].try_into().unwrap()).reversed_axes();
-    let Y = arr2(rows_y[..].try_into().unwrap()).reversed_axes();
-    (X, Y)
+    let x = arr2(rows_x[..].try_into().unwrap()).reversed_axes();
+    let y = arr2(rows_y[..].try_into().unwrap()).reversed_axes();
+    (x, y)
 }

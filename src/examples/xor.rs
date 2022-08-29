@@ -1,4 +1,5 @@
-use std::fs;
+#[allow(dead_code, unused_imports)]
+
 use std::path::Path;
 use ndarray::{array, Array2};
 use crate::algorithm::nn_layer::{Activation, CostType, NeuralNet};
@@ -9,6 +10,7 @@ use crate::utils::Utils;
 /// [0, 1] = [1]
 /// [1, 0] = [1]
 /// [1, 1] - [0]
+///
 pub fn xor_example() {
 
     let layer_dims = vec![2usize, 40usize,1usize];
@@ -42,10 +44,10 @@ pub fn xor_example() {
     }
 
     let predictions = NeuralNet::predict(&parameters, &layer_activation, &x_predict);
-    let Y = y_predict.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 });
+    let y = y_predict.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 });
 
     println!("predict: {:?}", predictions);
-    println!("Accuracy: {} %", NeuralNet::calc_accuracy(&Y, &predictions));
+    println!("Accuracy: {} %", NeuralNet::calc_accuracy(&y, &predictions));
 
     let x_single:Array2<f32> = array![[1., 1.]].reversed_axes();
     let result = NeuralNet::predict_as_probability(&parameters, &layer_activation, &x_single);
