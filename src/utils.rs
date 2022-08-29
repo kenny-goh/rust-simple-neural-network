@@ -5,7 +5,7 @@ use std::io::{Write, Error, Read};
 use ndarray::Array2;
 
 impl Utils {
-    pub fn serialize(params: &HashMap<String, Array2<f64>>, filename: &str) ->Result<(), Error> {
+    pub fn serialize(params: &HashMap<String, Array2<f32>>, filename: &str) ->Result<(), Error> {
         let serialized_json = serde_json::to_string(&params).unwrap();
         let path =  filename;
         let mut output = File::create(path)?;
@@ -13,11 +13,11 @@ impl Utils {
         Ok(())
     }
 
-    pub fn deserialize(filename: &str)->Result<HashMap<String,Array2<f64>>, Error>  {
+    pub fn deserialize(filename: &str)->Result<HashMap<String,Array2<f32>>, Error>  {
         let mut file = File::open(filename)?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
-        let params: HashMap<String,Array2<f64>> = serde_json::from_str(&contents)?;
+        let params: HashMap<String,Array2<f32>> = serde_json::from_str(&contents)?;
         Ok(params)
     }
 }
