@@ -2,7 +2,7 @@
 
 use std::path::Path;
 use ndarray::{array, Array2};
-use crate::algorithm::nn_layer::{Activation, CostType, NeuralNet};
+use crate::deep_learning::depecated::nn::{Activation, CostType, NeuralNetDeprecated};
 use crate::utils::Utils;
 
 /// XOR
@@ -31,26 +31,26 @@ pub fn xor_example() {
         let x_train:Array2<f32> = array![[0., 0.], [0., 1.], [1., 0.], [1., 1.],[1., 1.],[1., 1.],[1., 1.]].reversed_axes();
         let y_train:Array2<f32> = array![[0.], [1.], [1.], [0.], [0.], [0.], [0.]].reversed_axes();
 
-        parameters = NeuralNet::train(&x_train,
-                                      &y_train,
-                                      layer_dims,
-                                      &layer_activation,
-                                      1.2,
-                                      1000000,
-                                      &CostType::CrossEntropy,
-                                      true);
+        parameters = NeuralNetDeprecated::train(&x_train,
+                                                &y_train,
+                                                layer_dims,
+                                                &layer_activation,
+                                                1.2,
+                                                1000000,
+                                                &CostType::CrossEntropy,
+                                                true);
 
         // Utils::serialize(&parameters, "./model/xor.json").unwrap();
     }
 
-    let predictions = NeuralNet::predict(&parameters, &layer_activation, &x_predict);
+    let predictions = NeuralNetDeprecated::predict(&parameters, &layer_activation, &x_predict);
     let y = y_predict.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 });
 
     println!("predict: {:?}", predictions);
-    println!("Accuracy: {} %", NeuralNet::calc_accuracy(&y, &predictions));
+    println!("Accuracy: {} %", NeuralNetDeprecated::calc_accuracy(&y, &predictions));
 
     let x_single:Array2<f32> = array![[1., 1.]].reversed_axes();
-    let result = NeuralNet::predict_as_probability(&parameters, &layer_activation, &x_single);
+    let result = NeuralNetDeprecated::predict_as_probability(&parameters, &layer_activation, &x_single);
     println!("{:?}", result);
 }
 

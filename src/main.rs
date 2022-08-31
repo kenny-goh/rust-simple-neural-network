@@ -1,5 +1,5 @@
 #[allow(dead_code, unused_imports)]
-mod algorithm;
+mod deep_learning;
 mod examples;
 mod utils;
 

@@ -3,14 +3,19 @@
 use std::fs;
 use std::path::Path;
 use ndarray::{arr2, Array2};
-use crate::algorithm::nn_layer::{Activation, CostType};
-use crate::utils::Utils;
-use crate::algorithm::nn_layer::NeuralNet;
+use crate::deep_learning::activation::Activation;
+use crate::deep_learning::costs::Cost;
+use crate::deep_learning::nnet::{NeuralNet, TrainingParameter};
+use crate::deep_learning::tensor2d::{RandomWeightInitStrategy, Tensor2D};
+use crate::deep_learning::types::MetaLayer;
 
 pub fn bank_note_auth_example() {
 
-    let layer_dims = vec![4usize, 30usize, 1usize];
-    let layer_activation = vec![Activation::LeakyRelu, Activation::LeakyRelu, Activation::Sigmoid];
+    let mut nnet = NeuralNet::new(4,&[
+        MetaLayer::Dense(30, Activation::LeakRelu),
+        MetaLayer::Dense(1, Activation::Sigmoid)],
+        &RandomWeightInitStrategy::Xavier
+    );
 
     let raw_file_content =
         fs::read_to_string("./data/example.txt").expect("File is missing!");
@@ -19,10 +24,9 @@ pub fn bank_note_auth_example() {
 
     let (x_predict, y_predict) = split_test_data(&dataset, 0.1);
 
-    let parameters;
     if Path::new("./model/banknote_deep.json").exists() {
         println!("Bank note model exists, loading model from file.");
-        parameters = Utils::deserialize("./model/banknote_deep.json").expect("Unable to deserialize xor json");
+        nnet.load_weights("./model/banknote_deep.json");
     }
     else {
         println!("Bank note model does not exits, training from scratch...");
@@ -30,30 +34,28 @@ pub fn bank_note_auth_example() {
 
         println!("x_train shape {:?} y train shape {:?}", x_train.shape(), y_train.shape());
 
-        parameters = NeuralNet::train(&x_train,
-                                      &y_train,
-                                      layer_dims,
-                                      &layer_activation,
-                                      1.2,
-                                      10000,
-                                      &CostType::CrossEntropy,
-                                      true);
+        nnet.train(&x_train,
+                   &y_train,
+                   &TrainingParameter::default()
+                       .cost(Cost::CrossEntropy)
+                       .learning_rate(0.05)
+                       .stop_no_improvement_iterations(50)
+                       .stop_training_target_accuracy_treshold(100.00)
+                       .iterations(10000)
+        );
 
-        // Utils::serialize(&parameters, "./model/banknote_deep.json").unwrap();
+        nnet.save_weights("./model/banknote_deep.json");
+
     }
 
-    let predictions = NeuralNet::predict(&parameters, &layer_activation,&x_predict);
-    let y = y_predict.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 });
+    let predictions = nnet.predict(&x_predict);
+    let y = y_predict.to_binary_value(0.5);
+    println!("Test Accuracy: {} %", NeuralNet::calculate_accuracy(&y, &predictions));
 
-    println!("Test Accuracy: {} %", NeuralNet::calc_accuracy(&y, &predictions));
-
-    // let x_single:Array2<f32> = array![[-1.8411,10.8306,2.769,-3.0901]].reversed_axes();
-    // let result = NeuralNet::predict_as_probability(&parameters, &x_single);
-    // println!("{:?}", result);
 }
 
 ///
-fn split_training_data(lines: &Vec<&str>, split_ratio: f32) -> (Array2<f32>, Array2<f32>) {
+fn split_training_data(lines: &Vec<&str>, split_ratio: f32) -> (Tensor2D, Tensor2D) {
     let size = lines.len();
     let split_index = (size as f32 * split_ratio) as usize;
     let lhs = &lines[..split_index];
@@ -74,11 +76,11 @@ fn split_training_data(lines: &Vec<&str>, split_ratio: f32) -> (Array2<f32>, Arr
     }
     let x = arr2(rows_x[..].try_into().unwrap()).reversed_axes();
     let y = arr2(rows_y[..].try_into().unwrap()).reversed_axes();
-    (x, y)
+    (Tensor2D::NDArray(x), Tensor2D::NDArray(y))
 }
 
 ///
-fn split_test_data(lines: &Vec<&str>, split_ratio: f32) -> (Array2<f32>, Array2<f32>) {
+fn split_test_data(lines: &Vec<&str>, split_ratio: f32) -> (Tensor2D, Tensor2D) {
     let size = lines.len();
     let split_index = (size as f32 * split_ratio) as usize;
     let rhs = &lines[split_index..lines.len()];
@@ -100,5 +102,5 @@ fn split_test_data(lines: &Vec<&str>, split_ratio: f32) -> (Array2<f32>, Array2<
 
     let x = arr2(rows_x[..].try_into().unwrap()).reversed_axes();
     let y = arr2(rows_y[..].try_into().unwrap()).reversed_axes();
-    (x, y)
+    (Tensor2D::NDArray(x), Tensor2D::NDArray(y))
 }

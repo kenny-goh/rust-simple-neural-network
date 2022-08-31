@@ -2,7 +2,7 @@
 use std::{f32, fs};
 use std::path::Path;
 use ndarray::{arr2, Array2};
-use crate::algorithm::nn_layer::{Activation, CostType, NeuralNet};
+use crate::deep_learning::depecated::nn::{Activation, CostType, NeuralNetDeprecated};
 use crate::utils::Utils;
 
 const SCALING_DURATION: f32 = 180.;
@@ -39,20 +39,20 @@ pub fn checkout_bot_detector() {
         // println!("X TRAIN SHAPE {:?}", &x_train.shape());
         // println!("Y TRAIN SHAPE {:?}", &y_train.shape());
 
-        parameters = NeuralNet::train(&x_train,
-                                      &y_train,
-                                      layer_dims,
-                                      &layer_activation,
-                                      1.2, 10000,
-                                      &CostType::Quadratic,
-                                      true);
+        parameters = NeuralNetDeprecated::train(&x_train,
+                                                &y_train,
+                                                layer_dims,
+                                                &layer_activation,
+                                                1.2, 10000,
+                                                &CostType::Quadratic,
+                                                true);
         // Utils::serialize(&parameters, "./model/checkout_bot.json").unwrap();
     }
 
-    let predictions = NeuralNet::predict(&parameters, &layer_activation,&x_predict);
+    let predictions = NeuralNetDeprecated::predict(&parameters, &layer_activation, &x_predict);
     let y = y_predict.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 });
 
-    println!("Test Accuracy: {} %", NeuralNet::calc_accuracy(&y, &predictions));
+    println!("Test Accuracy: {} %", NeuralNetDeprecated::calc_accuracy(&y, &predictions));
 
     // let x_single:Array2<f32> = array![[0. / SCALING_DURATION,
     //     2. / SCALING_CLICK,

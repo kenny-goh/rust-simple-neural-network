@@ -2,7 +2,7 @@
 use std::{f32, fs};
 use std::path::Path;
 use ndarray::{arr2, array, Array2};
-use crate::algorithm::nn_layer::{Activation, CostType, NeuralNet};
+use crate::deep_learning::depecated::nn::{Activation, CostType, NeuralNetDeprecated};
 use crate::utils::Utils;
 
 const SCALING_DURATION: f32 = 180.;
@@ -37,20 +37,20 @@ pub fn login_bot_detector() {
 
         let (x_train, y_train) = split_training_data(&dataset, 0.9);
 
-        parameters = NeuralNet::train(&x_train,
-                                      &y_train,
-                                      layer_dims,
-                                      &layer_activation,
-                                      1.2, 10000,
-                                      &CostType::CrossEntropy,
-                                      true);
+        parameters = NeuralNetDeprecated::train(&x_train,
+                                                &y_train,
+                                                layer_dims,
+                                                &layer_activation,
+                                                1.2, 10000,
+                                                &CostType::CrossEntropy,
+                                                true);
         // Utils::serialize(&parameters, "./model/login_bot.json").unwrap();
     }
 
-    let predictions = NeuralNet::predict(&parameters, &layer_activation, &x_predict);
+    let predictions = NeuralNetDeprecated::predict(&parameters, &layer_activation, &x_predict);
     let y = y_predict.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 });
 
-    println!("Test Accuracy: {} %", NeuralNet::calc_accuracy(&y, &predictions));
+    println!("Test Accuracy: {} %", NeuralNetDeprecated::calc_accuracy(&y, &predictions));
 
     let x_single:Array2<f32> = array![[0. / SCALING_DURATION,
         2. / SCALING_CLICK,
@@ -58,7 +58,7 @@ pub fn login_bot_detector() {
         50.  / SCALING_MOUSE_MOTION,
         0. / SCALING_TYPING_SPEED,
         0. / SCALING_ERROR]].reversed_axes();
-    let result = NeuralNet::predict(&parameters, &layer_activation,&x_single);
+    let result = NeuralNetDeprecated::predict(&parameters, &layer_activation, &x_single);
     println!("{:?}", result);
 }
 
