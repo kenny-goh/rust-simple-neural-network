@@ -1,3 +1,7 @@
+extern crate core;
+
+use colored::*;
+
 #[allow(dead_code, unused_imports)]
 mod deep_learning;
 mod examples;

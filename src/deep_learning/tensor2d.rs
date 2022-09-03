@@ -1,6 +1,7 @@
+use core::f32;
 use std::{fmt, ops};
 use std::ops::{Add, Div, Mul, Neg, Sub};
-use ndarray::{array, Array, Array2, Axis};
+use ndarray::{arr2, array, Array, Array2, Axis, s};
 use ndarray_rand::RandomExt;
 use serde::{Serialize, Deserialize};
 use rand::distributions::Uniform;
@@ -15,9 +16,12 @@ pub enum Tensor2D {
     NDArray(Array2<f32>)
 }
 
+
+
+
 impl Tensor2D {
     
-    pub fn init_random_as_ndarray(cols: usize, rows: usize, strategy: &RandomWeightInitStrategy) ->Tensor2D {
+    pub fn ndarray_random_init(cols: usize, rows: usize, strategy: &RandomWeightInitStrategy) ->Tensor2D {
         match strategy {
             RandomWeightInitStrategy::Random => {
                 let random_weights = Array::random((cols, rows), Uniform::new(0., 1.)) * 0.001;
@@ -33,7 +37,7 @@ impl Tensor2D {
         }
     }
 
-    pub fn init_zeros_as_ndarray(cols: usize) ->Tensor2D {
+    pub fn ndarray_init_zeroes(cols: usize) ->Tensor2D {
         Tensor2D::NDArray(Array2::zeros((cols, 1)))
     }
     
@@ -88,6 +92,39 @@ impl Tensor2D {
         }
     }
 
+    pub fn sum_nan_all(&self, val: f32) -> f32 {
+        match self {
+            Tensor2D::NDArray(array) => {
+                array.mapv(|x| if x.is_nan() { 0.} else { x }).sum()
+            }
+        }
+    }
+
+    pub fn cols(&self, from: i32, to: i32) ->Tensor2D {
+        match self {
+            Tensor2D::NDArray(array) => {
+                let arr =  array.slice(s![..,from..to]);
+                Tensor2D::NDArray(arr.to_owned())
+            }
+        }
+    }
+
+    pub(crate) fn clip(&self, min: f32, max: f32) -> Tensor2D {
+        match self {
+            Tensor2D::NDArray(array) => {
+                Tensor2D::NDArray(array.mapv(|x| {
+                    if x < min {
+                        return min
+                    }
+                    if x > max {
+                        return max
+                    }
+                    x
+                }))
+            }
+        }
+    }
+
     pub fn powi(&self, i: i32) -> Tensor2D {
         match self {
             Tensor2D::NDArray(array) => {
@@ -104,10 +141,26 @@ impl Tensor2D {
         }
     }
 
+    pub fn sqrt(&self) -> Tensor2D {
+        match self {
+            Tensor2D::NDArray(array) => {
+                Tensor2D::NDArray(array.mapv(|x| f32::sqrt(x.max(0.0))))
+            }
+        }
+    }
+
     pub fn sum(&self) -> f32 {
         match self {
             Tensor2D::NDArray(array) => {
                 array.sum()
+            }
+        }
+    }
+
+    pub fn sum_keep_dims(&self) -> Tensor2D {
+        match self {
+            Tensor2D::NDArray(array) => {
+                Tensor2D::NDArray(arr2(&[[array.sum()]]))
             }
         }
     }
@@ -359,7 +412,6 @@ impl Mul<f32> for &Tensor2D {
         }
     }
 }
-
 
 impl Mul<Tensor2D> for f32 {
     type Output = Tensor2D;
@@ -644,4 +696,11 @@ fn test_derivative_tanh() {
     let n = 10.;
     let derivative_tanh = 1.0 - (f32::powi(n, 2));
     assert_eq!(m1.derivative_tanh(), Tensor2D::NDArray(array![[derivative_tanh]]));
+}
+
+#[test]
+fn test_slice() {
+    let m1 =Tensor2D::NDArray(array![[1.,2.,3.],
+                                 [1.,2.,3.]]);
+    println!("{:?}", m1.cols(1,3));
 }

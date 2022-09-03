@@ -1,8 +1,14 @@
 #[allow(dead_code, unused_imports)]
 use std::{f32, fs};
 use std::path::Path;
-use ndarray::{arr2, Array2};
-use crate::deep_learning::depecated::nn::{Activation, CostType, NeuralNetDeprecated};
+use ndarray::{arr2, array, Array2};
+use colored::*;
+use crate::deep_learning::activation::Activation;
+use crate::deep_learning::costs::Cost;
+use crate::deep_learning::neural_net::NeuralNet;
+use crate::deep_learning::parameters::TrainParameters;
+use crate::deep_learning::tensor2d::{RandomWeightInitStrategy, Tensor2D};
+use crate::deep_learning::types::MetaLayer;
 use crate::utils::Utils;
 
 const SCALING_DURATION: f32 = 180.;
@@ -14,11 +20,11 @@ const SCALING_TYPING_SPEED: f32 = 2000.;
 
 pub fn checkout_bot_detector() {
 
-    let layer_dims = vec![6usize, 20usize, 1usize];
-    let layer_activation = vec![Activation::Tanh,
-                                Activation::Tanh,
-                                Activation::Sigmoid];
-
+    let mut net = NeuralNet::new(6, &[
+        MetaLayer::Dense(30, Activation::LeakRelu),
+        MetaLayer::Dense(1, Activation::Sigmoid)],
+                                 &RandomWeightInitStrategy::Xavier
+    );
     let raw_file_content =
         fs::read_to_string("./data/checkout_data.csv").expect("File is missing!");
 
@@ -26,46 +32,40 @@ pub fn checkout_bot_detector() {
 
     let (x_predict, y_predict) = split_test_data(&dataset, 0.1);
 
-    let parameters;
+
     if Path::new("./model/checkout_bot.json").exists() {
         println!("Model exists, loading model from file.");
-        parameters = Utils::deserialize("./model/checkout_bot.json").expect("Unable to deserialize xor json");
+        net.load_weights("./model/checkout_bot.json");
     }
     else {
         println!("Model model does not exits, training from scratch...");
 
         let (x_train, y_train) = split_training_data(&dataset, 0.9);
 
-        // println!("X TRAIN SHAPE {:?}", &x_train.shape());
-        // println!("Y TRAIN SHAPE {:?}", &y_train.shape());
-
-        parameters = NeuralNetDeprecated::train(&x_train,
-                                                &y_train,
-                                                layer_dims,
-                                                &layer_activation,
-                                                1.2, 10000,
-                                                &CostType::Quadratic,
-                                                true);
-        // Utils::serialize(&parameters, "./model/checkout_bot.json").unwrap();
+        net.train(&x_train,
+                  &y_train,
+                  &TrainParameters::default()
+                      .cost(Cost::CrossEntropy)
+                      .learning_rate(0.05)
+                      .learning_rate_decay(0.5)
+                      .l2(0.01)
+                      .optimizer_rms_props(0.9)
+                      .batch_size(32)
+                      .iterations(Some(100))
+                      .target_stop_condition(None)
+                  //.gradient_clipping(Some((-1.,1.)))
+        );
+        net.save_weights("./model/checkout_bot.json");
     }
 
-    let predictions = NeuralNetDeprecated::predict(&parameters, &layer_activation, &x_predict);
-    let y = y_predict.mapv(|a| if a > 0.5 { 1.0 } else { 0.0 });
+    let predictions = net.predict(&x_predict);
+    let y = y_predict.to_binary_value(0.5);
+    println!("Test Accuracy: {} %", NeuralNet::calculate_accuracy(&y, &predictions).to_string().bold());
 
-    println!("Test Accuracy: {} %", NeuralNetDeprecated::calc_accuracy(&y, &predictions));
-
-    // let x_single:Array2<f32> = array![[0. / SCALING_DURATION,
-    //     2. / SCALING_CLICK,
-    //     180. / SCALING_KEYPRESS,
-    //     50.  / SCALING_MOUSE_MOTION,
-    //     0. / SCALING_TYPING_SPEED,
-    //     0. / SCALING_ERROR]].reversed_axes();
-    // let result = NeuralNet::predict(&parameters, &x_single);
-    // println!("{:?}", result);
 }
 
 ///
-fn split_training_data(lines: &Vec<&str>, split_ratio: f32) -> (Array2<f32>, Array2<f32>) {
+fn split_training_data(lines: &Vec<&str>, split_ratio: f32) -> (Tensor2D, Tensor2D){
     let size = lines.len();
     let split_index = (size as f32 * split_ratio) as usize;
     let lhs = &lines[..split_index];
@@ -88,12 +88,12 @@ fn split_training_data(lines: &Vec<&str>, split_ratio: f32) -> (Array2<f32>, Arr
 
     let x = arr2(rows_x[..].try_into().unwrap()).reversed_axes();
     let y = arr2(rows_y[..].try_into().unwrap()).reversed_axes();
-    (x, y)
+    (Tensor2D::NDArray(x), Tensor2D::NDArray(y))
 }
 
 
 ///
-fn split_test_data(lines: &Vec<&str>, split_ratio: f32) -> (Array2<f32>, Array2<f32>) {
+fn split_test_data(lines: &Vec<&str>, split_ratio: f32) -> (Tensor2D, Tensor2D) {
     let size = lines.len();
     let split_index = (size as f32 * split_ratio) as usize;
     let rhs = &lines[split_index..lines.len()];
@@ -116,5 +116,5 @@ fn split_test_data(lines: &Vec<&str>, split_ratio: f32) -> (Array2<f32>, Array2<
 
     let x = arr2(rows_x[..].try_into().unwrap()).reversed_axes();
     let y = arr2(rows_y[..].try_into().unwrap()).reversed_axes();
-    (x, y)
+    (Tensor2D::NDArray(x), Tensor2D::NDArray(y))
 }

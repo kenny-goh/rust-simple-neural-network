@@ -3,18 +3,21 @@
 use std::fs;
 use std::path::Path;
 use ndarray::{arr2, Array2};
+use colored::*;
 use crate::deep_learning::activation::Activation;
 use crate::deep_learning::costs::Cost;
-use crate::deep_learning::nnet::{NeuralNet, TrainingParameter};
+use crate::deep_learning::neural_net::{NeuralNet};
+use crate::deep_learning::optimizer::Optimizer;
+use crate::deep_learning::parameters::TrainParameters;
 use crate::deep_learning::tensor2d::{RandomWeightInitStrategy, Tensor2D};
 use crate::deep_learning::types::MetaLayer;
 
 pub fn bank_note_auth_example() {
 
-    let mut nnet = NeuralNet::new(4,&[
+    let mut net = NeuralNet::new(4, &[
         MetaLayer::Dense(30, Activation::LeakRelu),
         MetaLayer::Dense(1, Activation::Sigmoid)],
-        &RandomWeightInitStrategy::Xavier
+                                 &RandomWeightInitStrategy::Xavier
     );
 
     let raw_file_content =
@@ -26,7 +29,7 @@ pub fn bank_note_auth_example() {
 
     if Path::new("./model/banknote_deep.json").exists() {
         println!("Bank note model exists, loading model from file.");
-        nnet.load_weights("./model/banknote_deep.json");
+        net.load_weights("./model/banknote_deep.json");
     }
     else {
         println!("Bank note model does not exits, training from scratch...");
@@ -34,23 +37,27 @@ pub fn bank_note_auth_example() {
 
         println!("x_train shape {:?} y train shape {:?}", x_train.shape(), y_train.shape());
 
-        nnet.train(&x_train,
-                   &y_train,
-                   &TrainingParameter::default()
+        net.train(&x_train,
+                  &y_train,
+                  &TrainParameters::default()
                        .cost(Cost::CrossEntropy)
-                       .learning_rate(0.05)
-                       .stop_no_improvement_iterations(50)
-                       .stop_training_target_accuracy_treshold(100.00)
-                       .iterations(10000)
+                       .learning_rate(0.005)
+                       .learning_rate_decay(0.5)
+                       .l2(0.01)
+                       .optimizer_rms_props(0.9)
+                       .batch_size(32)
+                       .iterations(Some(1000))
+                       .target_stop_condition(Some(99.999))
+                  //.gradient_clipping(Some((-1.,1.)))
         );
 
-        nnet.save_weights("./model/banknote_deep.json");
+        //nnet.save_weights("./model/banknote_deep.json");
 
     }
 
-    let predictions = nnet.predict(&x_predict);
+    let predictions = net.predict(&x_predict);
     let y = y_predict.to_binary_value(0.5);
-    println!("Test Accuracy: {} %", NeuralNet::calculate_accuracy(&y, &predictions));
+    println!("Test Accuracy: {} %", NeuralNet::calculate_accuracy(&y, &predictions).to_string().bold());
 
 }
 

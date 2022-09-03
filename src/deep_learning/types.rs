@@ -7,7 +7,6 @@ pub enum MetaLayer {
     Dense(usize, Activation),
 }
 
-// Specifies layers within neural net.
 pub enum Layer {
     Dense(DenseLayer),
 }
