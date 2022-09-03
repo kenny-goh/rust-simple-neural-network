@@ -36,8 +36,8 @@ Dev Accuracy: 100 %
 Test Accuracy: 100 %
 ```
 
-## todo
-# Progress
+
+## Progress
 - Type
   - [x] Sequential
   - RNN
