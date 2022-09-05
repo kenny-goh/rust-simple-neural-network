@@ -22,13 +22,16 @@ So to summarise:
 - Minimalistic KERAS like implementation that can solve MNIST digit classification problem. Should support forward based network with the following featuers:
   - NN layers (Dense)
   - Activation (Sigmoid, Tanh, Relu and Softmax)
+  - SGD (Stochastic Gradient Decent)
+    - Vanilla
+    - Momentum
+    - RMSProps
+    - Adams
   - Hyper-parameters
     - Learning rate
     - Decay learning rate
-    - Adam, RMS props
     - Regularization (L2, Dropout, etc..)
-  
-  
+
 - Stretch target: Accelerate the training / prediction using GPU acceleration.
 
 ## Toy example to solve XOR problem
