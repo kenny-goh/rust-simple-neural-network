@@ -10,12 +10,36 @@ use std::time::Instant;
 use ndarray::s;
 use crate::rust_learn::parameters::TrainParameters;
 
+/// NeuralNet is a configurable deep learning 'model' that can run training on input data and labels
+/// to make a prediction.
+///
+/// Note: This object is in a state of flux and will be be unstable until version 1.00
 pub struct NeuralNet {
     input_size: usize,
     layers: Vec<Layer>,
 }
 
 impl NeuralNet {
+
+    /// Instantiate a new NeuralNet model.
+    ///
+    /// # Arguments
+    /// * `input_size` - Size of feature input
+    /// * `metalayers` - Array of NN layer
+    /// * `weight_init_strategy` - enum of initialization strategy e.g Random, Xavier
+    /// # Examples
+    /// ```
+    /// use rust_deep_learning::rust_learn::activation::Activation;
+    /// use rust_deep_learning::rust_learn::neural_net::NeuralNet;
+    /// use rust_deep_learning::rust_learn::tensor2d::WeightInitStrategy;
+    /// use rust_deep_learning::rust_learn::types::MetaLayer;
+    ///
+    /// let mut net = NeuralNet::new(2,
+    ///   &[MetaLayer::Dense(10, Activation::LeakyRelu),
+    ///     MetaLayer::Dense(1,  Activation::Sigmoid)],
+    ///     &WeightInitStrategy::Xavier);
+    /// ```
+    ///
     pub fn new(input_size: usize,
                metalayers: &[MetaLayer],
                weight_init_strategy: &WeightInitStrategy) -> NeuralNet {
@@ -26,7 +50,10 @@ impl NeuralNet {
         let first_layer = metalayers_iter.next().unwrap();
         match first_layer {
             MetaLayer::Dense(size, activation) => {
-                layers.push(Layer::Dense(DenseLayer::new(layer_inputs, *size, *activation, weight_init_strategy)));
+                layers.push(Layer::Dense(DenseLayer::new(layer_inputs,
+                                                         *size,
+                                                         *activation,
+                                                         weight_init_strategy)));
                 layer_inputs = *size;
             }
         }
@@ -34,7 +61,10 @@ impl NeuralNet {
         for meta_layer in metalayers_iter {
             match meta_layer {
                 MetaLayer::Dense(size, activation) => {
-                    layers.push(Layer::Dense(DenseLayer::new(layer_inputs, *size, *activation, weight_init_strategy)));
+                    layers.push(Layer::Dense(DenseLayer::new(layer_inputs,
+                                                             *size,
+                                                             *activation,
+                                                             weight_init_strategy)));
                     layer_inputs = *size;
                 }
             }
@@ -46,7 +76,38 @@ impl NeuralNet {
         }
     }
 
-    pub fn train(&mut self, x_input: &Tensor2D,
+    /// Runs training on the given input feature and label with the given training parameters
+    /// # Arguments
+    /// * `x_input` -  2 dimensional matrix with rows of features
+    /// * `y_output` - 2 dimensional matrix with rows of labels
+    /// * `params` - Training parameters
+    ///
+    /// # Examples
+    /// ```
+    /// use ndarray::array;
+    /// use rust_deep_learning::rust_learn::parameters::TrainParameters;
+    /// use rust_deep_learning::rust_learn::tensor2d::Tensor2D;
+    ///
+    /// let x_train = Tensor2D::NDArray(array![
+    ///   [0., 0.],
+    ///   [0., 1.],
+    ///   [1., 0.],
+    ///   [1., 1.]
+    ///  ].reversed_axes());
+    ///
+    ///  let y_train = Tensor2D::NDArray(array![
+    ///   [0.],
+    ///   [1.],
+    ///   [1.],
+    ///   [0.],
+    ///   [0.]
+    /// ].reversed_axes());
+    ///
+    /// net.train(&x_train,&y_train, &TrainParameters::default());
+    ///
+    /// ```
+    pub fn train(&mut self,
+                 x_input: &Tensor2D,
                  y_output: &Tensor2D,
                  params: &TrainParameters) {
 
@@ -61,7 +122,7 @@ impl NeuralNet {
         let mut epoch = 0;
         let mut costs = 0_f32;
         let now = Instant::now();
-        let eval_set_name = if params.evaluation_dataset.is_some() { "Test"} else {"Dev"};
+        let eval_set_name = if params.evaluation_dataset.is_some() { "Test"} else { "Dev" };
 
         loop {
             println!("{}","*****************************************");
@@ -157,6 +218,48 @@ impl NeuralNet {
         }
     }
 
+    /// Predict an output given a feature
+    /// # Arguments
+    /// * `x_input` -  2 dimensional matrix with rows of features
+    ///
+    /// # Output
+    /// * `Tensor2D` - Predictions represented as rows of labels
+    ///
+    /// # Examples
+    /// ```
+    /// use std::intrinsics::likely;
+    /// use ndarray::array;
+    /// use rust_deep_learning::rust_learn::tensor2d::Tensor2D;
+    ///
+    /// // Lets use a XOR example
+    /// let x_test = Tensor2D::NDArray(array![
+    ///   [0., 0.],
+    ///   [0., 1.],
+    ///   [1., 0.],
+    ///   [1., 1.]
+    /// ].reversed_axes());
+    ///
+    /// let result = net.predict(x_test);
+    /// // Result will look something like
+    /// // [[0],[1],[1],[0]]
+    ///
+    /// ```
+    pub fn predict(&mut self, x_input: &Tensor2D) -> Tensor2D {
+        let mut output_layers: Vec<(Tensor2D, Option<Tensor2D>)> = Vec::with_capacity(self.layers.len());
+        let mut activation = x_input.clone();
+        for layer in self.layers.iter_mut() {
+            let (a, z) = match layer {
+                Layer::Dense(dense_layer) => {
+                    let (a, z) = dense_layer.forward_props(&activation);
+                    (a, Some(z))
+                }
+            };
+            output_layers.push((activation, z));
+            activation = a;
+        }
+        activation.to_binary_value(0.5)
+    }
+
     fn layer_back_props(epoch: i32,
                         train_size: f32,
                         partial_error: &mut Tensor2D,
@@ -188,22 +291,6 @@ impl NeuralNet {
         (a, z)
     }
 
-    pub fn predict(&mut self, x_input: &Tensor2D) -> Tensor2D {
-        let mut output_layers: Vec<(Tensor2D, Option<Tensor2D>)> = Vec::with_capacity(self.layers.len());
-        let mut activation = x_input.clone();
-        for layer in self.layers.iter_mut() {
-            let (a, z) = match layer {
-                Layer::Dense(dense_layer) => {
-                    let (a, z) = dense_layer.forward_props(&activation);
-                    (a, Some(z))
-                }
-            };
-            output_layers.push((activation, z));
-            activation = a;
-        }
-        activation.to_binary_value(0.5)
-    }
-
     pub fn predict_as_prob(&mut self, x_input: &Tensor2D) -> Tensor2D {
         let mut output_layers: Vec<(Tensor2D, Option<Tensor2D>)> = Vec::with_capacity(self.layers.len());
         let mut activation = x_input.clone();
@@ -221,14 +308,13 @@ impl NeuralNet {
     }
 
     pub fn calculate_accuracy(target: &Tensor2D, actual: &Tensor2D) -> f32 {
-        // pretty sure its possible to do this via matrix operations.
-        // println!("TARGET {:?}", target);
         let matches = target.count_equal_rows(&actual);
         let size = target.size(1);
         return (matches / size) * 100.0;
     }
 
-
+    // Save the model as weights. Not this method will not preserve the parameters and
+    // and architecture.
     pub fn save_weights(&mut self, filename: &str) {
         let mut params: HashMap<String, Tensor2D> = HashMap::new();
         let mut layer_index = 1;
@@ -246,6 +332,7 @@ impl NeuralNet {
         NeuralNet::serialize(&params, filename).unwrap();
     }
 
+    // Load the model using weights
     pub fn load_weights(&mut self, filename: &str) {
         let params = NeuralNet::deserialize(filename).expect("Unable to load weights");
         let mut layer_index = 1;
@@ -263,6 +350,7 @@ impl NeuralNet {
         NeuralNet::serialize(&params, filename).unwrap();
     }
 
+    /// Helper method to split training data to smaller batches
     fn split_to_batches(
         input: &Tensor2D,
         output: &Tensor2D,

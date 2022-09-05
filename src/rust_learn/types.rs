@@ -8,3 +8,9 @@ pub enum MetaLayer {
 pub enum Layer {
     Dense(DenseLayer),
 }
+
+pub enum Optimizer {
+    SGD,
+    SGDMomentum,
+    RMSProps
+}

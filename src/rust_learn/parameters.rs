@@ -1,5 +1,5 @@
 use crate::rust_learn::costs::Cost;
-use crate::rust_learn::optimizer::Optimizer;
+use crate::rust_learn::types::Optimizer;
 use crate::rust_learn::tensor2d::Tensor2D;
 
 macro_rules! builder_field {

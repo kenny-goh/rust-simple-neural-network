@@ -2,6 +2,8 @@ use crate::rust_learn::tensor2d::Tensor2D;
 use colored::*;
 
 #[derive(Debug)]
+
+//
 pub enum Cost {
     CrossEntropy,
     MeanSquareError,

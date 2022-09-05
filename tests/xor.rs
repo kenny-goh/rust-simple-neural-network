@@ -4,7 +4,7 @@ use rust_deep_learning::rust_learn;
 use crate::rust_learn::activation::Activation;
 use crate::rust_learn::costs::Cost;
 use crate::rust_learn::neural_net::{NeuralNet};
-use crate::rust_learn::optimizer::Optimizer;
+use rust_deep_learning::rust_learn::types::Optimizer;
 use crate::rust_learn::parameters::TrainParameters;
 use crate::rust_learn::tensor2d::{WeightInitStrategy, Tensor2D};
 use crate::rust_learn::types::MetaLayer;

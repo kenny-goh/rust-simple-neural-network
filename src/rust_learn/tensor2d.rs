@@ -8,12 +8,78 @@ use ndarray_stats::QuantileExt;
 use serde::{Serialize, Deserialize};
 use rand::distributions::Uniform;
 
+macro_rules! unary_tensor_op {
+    ($LhrOp:ty, $opname: ident, $lambda: expr) => {
+        impl $LhrOp for Tensor2D {
+            type Output = Self;
+            fn $opname(self) -> Self::Output {
+                match self {
+                    Tensor2D::NDArray(array) => {
+                        Tensor2D::NDArray($lambda(array))
+                    }
+                }
+            }
+        }
+    }
+}
+
+macro_rules! tensor_op_tensor {
+    ($op:ty, $target:ty, $rhs:ty, $opname: ident, $lambda: expr) => {
+        impl $op for $target {
+            type Output = Tensor2D;
+            fn $opname(self, rhs: $rhs) -> Tensor2D {
+                match self {
+                    Tensor2D::NDArray(array) => {
+                        let array2 = rhs.to_ndarray();
+                        Tensor2D::NDArray($lambda(array, array2))
+                    }
+                }
+            }
+        }
+    }
+}
+
+macro_rules! tensor_op_real {
+    ($op:ty, $typ:ty, $target:ty, $opname: ident, $lambda: expr) => {
+        impl $op for $target {
+            type Output = Tensor2D;
+            fn $opname(self, rhs: $typ) -> Tensor2D {
+                match self {
+                    Tensor2D::NDArray(array) => {
+                        Tensor2D::NDArray($lambda(array, rhs))
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+macro_rules! real_op_tensor {
+    ($op:ty, $target:ty, $opname: ident, $rhs: ty, $lambda: expr) => {
+       impl $op for $target {
+            type Output = Tensor2D;
+            fn $opname(self, rhs: $rhs) -> Tensor2D {
+                match rhs {
+                    Tensor2D::NDArray(array) => {
+                        Tensor2D::NDArray($lambda(self, array))
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 pub enum WeightInitStrategy {
     Random,
     Xavier
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+/// Tensor2D is a an abstract two dimensional matrix that implements common vector operations.
+/// The intention of this abstraction is to provide at least two default backend vector implementations:
+/// NDArray and probably WebGPU based vector.
 pub enum Tensor2D {
     NDArray(Array2<f32>)
 }
@@ -324,275 +390,30 @@ impl fmt::Display for Tensor2D {
     }
 }
 
+unary_tensor_op!(Neg, neg, |arr: Array2<f32> | -arr);
 
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Neg for Tensor2D {
-    type Output = Self;
-    fn neg(self) -> Self::Output {
-        match self {
-            Tensor2D::NDArray(array) => {
-                Tensor2D::NDArray(-array)
-            }
-        }
-    }
-}
+tensor_op_tensor!(Add<Tensor2D>, Tensor2D, Tensor2D, add, | arr: Array2<f32>, arr2: &Array2<f32> |  arr + arr2 );
+tensor_op_tensor!(Add<&Tensor2D>, &Tensor2D, &Tensor2D, add, | arr: &Array2<f32>, arr2: &Array2<f32> |  arr + arr2 );
+tensor_op_tensor!(Sub<Tensor2D>, Tensor2D, Tensor2D, sub, | arr: Array2<f32>, arr2: &Array2<f32> |  arr - arr2 );
+tensor_op_tensor!(Sub<&Tensor2D>, &Tensor2D, &Tensor2D, sub, | arr: &Array2<f32>, arr2: &Array2<f32> |  arr - arr2 );
+tensor_op_tensor!(Mul<Tensor2D>, Tensor2D, Tensor2D, mul, | arr: Array2<f32>, arr2: &Array2<f32> |  arr * arr2 );
+tensor_op_tensor!(Mul<&Tensor2D>, &Tensor2D, &Tensor2D, mul, | arr: &Array2<f32>, arr2: &Array2<f32> |  arr * arr2 );
+tensor_op_tensor!(Mul<&Tensor2D>, Tensor2D, &Tensor2D, mul, | arr: Array2<f32>, arr2: &Array2<f32> |  arr * arr2 );
 
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Add<Tensor2D> for Tensor2D {
-    type Output = Tensor2D;
-    fn add(self, rhs: Tensor2D) -> Tensor2D {
-        match self {
-            Tensor2D::NDArray(array) => {
-                let array2 = match rhs {
-                    Tensor2D::NDArray(array) => { array }
-                };
-                Tensor2D::NDArray(array + array2)
-            }
-        }
-    }
-}
+tensor_op_tensor!(Div<Tensor2D>, Tensor2D, Tensor2D, div,| arr: Array2<f32>, arr2: &Array2<f32> |  arr / arr2 );
+tensor_op_tensor!(Div<&Tensor2D>, &Tensor2D, &Tensor2D, div, | arr: &Array2<f32>, arr2: &Array2<f32> |  arr / arr2 );
 
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Add<&Tensor2D> for &Tensor2D {
-    type Output = Tensor2D;
-    fn add(self, rhs: &Tensor2D) -> Tensor2D {
-        match self {
-            Tensor2D::NDArray(array) => {
-                let other_result = match rhs {
-                    Tensor2D::NDArray(array) => { array }
-                };
-                Tensor2D::NDArray(array + other_result)
-            }
-        }
-    }
-}
+tensor_op_real!(Add<f32>, f32, Tensor2D, add, | arr: Array2<f32>, arr2: f32 |  arr + arr2 );
+tensor_op_real!(Sub<f32>, f32, Tensor2D, sub, | arr: Array2<f32>, arr2: f32 |  arr - arr2 );
+tensor_op_real!(Mul<f32>, f32, Tensor2D, mul, | arr: Array2<f32>, arr2: f32 |  arr * arr2 );
+tensor_op_real!(Mul<f32>, f32, &Tensor2D, mul, | arr: &Array2<f32>, arr2: f32 |  arr * arr2 );
+tensor_op_real!(Div<f32>, f32, Tensor2D, div, | arr: Array2<f32>, arr2: f32 |  arr / arr2 );
 
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Add<f32> for Tensor2D {
-    type Output = Tensor2D;
-    fn add(self, rhs: f32) -> Tensor2D {
-        match self {
-            Tensor2D::NDArray(array) => {
-                Tensor2D::NDArray(array + rhs)
-            }
-        }
-    }
-}
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Add<Tensor2D> for f32 {
-    type Output = Tensor2D;
-    fn add(self, rhs: Tensor2D) -> Tensor2D {
-        match rhs {
-            Tensor2D::NDArray(array) => {
-                Tensor2D::NDArray(self + array)
-            }
-        }
-    }
-}
-
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Add<&Tensor2D> for f32 {
-    type Output = Tensor2D;
-    fn add(self, rhs: &Tensor2D) -> Tensor2D {
-        match rhs {
-            Tensor2D::NDArray(array) => {
-                Tensor2D::NDArray(self + array)
-            }
-        }
-    }
-}
-
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Sub<f32> for Tensor2D {
-    type Output = Tensor2D;
-    fn sub(self, rhs: f32) -> Tensor2D {
-        match self {
-            Tensor2D::NDArray(array) => {
-                Tensor2D::NDArray(array - rhs)
-            }
-        }
-    }
-}
-
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Sub<Tensor2D> for Tensor2D {
-    type Output = Tensor2D;
-    fn sub(self, rhs: Tensor2D) -> Tensor2D {
-        match self {
-            Tensor2D::NDArray(array) => {
-                let other_result = match rhs {
-                    Tensor2D::NDArray(array) => { array }
-                };
-                Tensor2D::NDArray(array - &other_result)
-            }
-        }
-    }
-}
-
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Sub<&Tensor2D> for &Tensor2D {
-    type Output = Tensor2D;
-    fn sub(self, rhs: &Tensor2D) -> Tensor2D {
-        match self {
-            Tensor2D::NDArray(array) => {
-                let other_result = match rhs {
-                    Tensor2D::NDArray(array) => { array }
-                };
-                Tensor2D::NDArray(array - other_result)
-            }
-        }
-    }
-}
-
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Sub<Tensor2D> for f32 {
-    type Output = Tensor2D;
-    fn sub(self, rhs: Tensor2D) -> Tensor2D {
-        match rhs {
-            Tensor2D::NDArray(array) => {
-                Tensor2D::NDArray(self - array)
-            }
-        }
-    }
-}
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Sub<&Tensor2D> for f32 {
-    type Output = Tensor2D;
-    fn sub(self, rhs: &Tensor2D) -> Tensor2D {
-        match rhs {
-            Tensor2D::NDArray(array) => {
-                Tensor2D::NDArray(self - array)
-            }
-        }
-    }
-}
-
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Mul<Tensor2D> for Tensor2D {
-    type Output = Tensor2D;
-    fn mul(self, rhs: Tensor2D) -> Tensor2D {
-        match self {
-            Tensor2D::NDArray(array) => {
-                let other_result = match rhs {
-                    Tensor2D::NDArray(array) => { array }
-                };
-                Tensor2D::NDArray(array * &other_result)
-            }
-        }
-    }
-}
-
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Mul<&Tensor2D> for Tensor2D {
-    type Output = Tensor2D;
-    fn mul(self, rhs: &Tensor2D) -> Tensor2D {
-        match self {
-            Tensor2D::NDArray(array) => {
-                let other_result = match rhs {
-                    Tensor2D::NDArray(array) => { array }
-                };
-                Tensor2D::NDArray(array * other_result)
-            }
-        }
-    }
-}
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Mul<f32> for Tensor2D {
-    type Output = Tensor2D;
-    fn mul(self, rhs: f32) -> Tensor2D {
-        match self {
-            Tensor2D::NDArray(array) => {
-                Tensor2D::NDArray(array * rhs)
-            }
-        }
-    }
-}
-
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Mul<f32> for &Tensor2D {
-    type Output = Tensor2D;
-    fn mul(self, rhs: f32) -> Tensor2D {
-        match self {
-            Tensor2D::NDArray(array) => {
-                Tensor2D::NDArray(array * rhs)
-            }
-        }
-    }
-}
-
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Mul<Tensor2D> for f32 {
-    type Output = Tensor2D;
-    fn mul(self, rhs: Tensor2D) -> Tensor2D {
-        match rhs {
-            Tensor2D::NDArray(array) => {
-                Tensor2D::NDArray(self * array)
-            }
-        }
-    }
-}
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Div<Tensor2D> for Tensor2D {
-    type Output = Tensor2D;
-    fn div(self, rhs: Tensor2D) -> Tensor2D {
-        match self {
-            Tensor2D::NDArray(array) => {
-                let other_result = match rhs {
-                    Tensor2D::NDArray(array) => { array }
-                };
-                Tensor2D::NDArray(array / &other_result)
-            }
-        }
-    }
-}
-
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Div<&Tensor2D> for &Tensor2D {
-    type Output = Tensor2D;
-    fn div(self, rhs: &Tensor2D) -> Tensor2D {
-        match self {
-            Tensor2D::NDArray(array) => {
-                let other_result = match rhs {
-                    Tensor2D::NDArray(array) => { array }
-                };
-                Tensor2D::NDArray(array / other_result)
-            }
-        }
-    }
-}
-
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Div<f32> for Tensor2D {
-    type Output = Tensor2D;
-    fn div(self, rhs: f32) -> Tensor2D {
-        match self {
-            Tensor2D::NDArray(array) => {
-                Tensor2D::NDArray(array / rhs)
-            }
-        }
-    }
-}
-
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Div<Tensor2D> for f32 {
-    type Output = Tensor2D;
-    fn div(self, rhs: Tensor2D) -> Tensor2D {
-        match rhs {
-            Tensor2D::NDArray(array) => {
-                Tensor2D::NDArray(self / array)
-            }
-        }
-    }
-}
-// fixme: Use Rust Macro to reduce boiler plate code
-impl Div<&Tensor2D> for f32 {
-    type Output = Tensor2D;
-    fn div(self, rhs: &Tensor2D) -> Tensor2D {
-        match rhs {
-            Tensor2D::NDArray(array) => {
-                Tensor2D::NDArray(self / array)
-            }
-        }
-    }
-}
-
+real_op_tensor!(Add<Tensor2D>, f32, add, Tensor2D, | real: f32, arr: Array2<f32> |  real + arr );
+real_op_tensor!(Add<&Tensor2D>, f32, add, &Tensor2D, | real: f32, arr: &Array2<f32> |  real + arr );
+real_op_tensor!(Sub<Tensor2D>, f32, sub, Tensor2D, | real: f32, arr: Array2<f32> |  real - arr );
+real_op_tensor!(Sub<&Tensor2D>, f32, sub, &Tensor2D, | real: f32, arr: &Array2<f32> |  real - arr );
+real_op_tensor!(Mul<Tensor2D>, f32, mul, Tensor2D, | real: f32, arr: Array2<f32> |  real * arr );
+real_op_tensor!(Mul<&Tensor2D>, f32, mul, &Tensor2D, | real: f32, arr: &Array2<f32> |  real * arr );
+real_op_tensor!(Div<Tensor2D>, f32, div, Tensor2D, | real: f32, arr: Array2<f32> |  real / arr );
+real_op_tensor!(Div<&Tensor2D>, f32, div, &Tensor2D, | real: f32, arr: &Array2<f32> |  real / arr );

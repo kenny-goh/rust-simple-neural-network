@@ -1,8 +1,10 @@
 use crate::rust_learn::activation::Activation;
-use crate::rust_learn::optimizer::Optimizer;
+use crate::rust_learn::types::Optimizer;
 use crate::rust_learn::parameters::TrainParameters;
 use crate::rust_learn::tensor2d::{WeightInitStrategy, Tensor2D};
 
+/// This class needs to be refactored, its a mess.
+///
 pub struct DenseLayer {
     activation: Activation,
     weights: Tensor2D,
