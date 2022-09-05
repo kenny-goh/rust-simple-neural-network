@@ -38,16 +38,17 @@ pub fn mnist_example() {
                   &y_train,
                   &TrainParameters::default()
                       .cost(Cost::MeanSquareError)
-                      .learning_rate(0.5)
-                      .learning_rate_decay(1.0)
-                      .optimizer_sgd_momentum(0.9)
+                      .learning_rate(0.005)
+                      .learning_rate_decay(0.3)
+                      .optimizer_rms_props(0.9)
+                      // .optimizer_sgd_momentum(0.9)
                       .l2(0.2)
                       .batch_size(64)
                       .iterations(Some(100000))
                       .log_interval(500)
                       .evaluation_dataset(Some((Tensor2D::NDArray(subset_x_predict),
                                                 Tensor2D::NDArray(subset_y_predict))))
-                      .target_stop_condition(Some(97.00)));
+                      .target_stop_condition(Some(98.00)));
 
         net.save_weights("./model/mnist.json");
     }
