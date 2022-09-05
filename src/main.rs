@@ -1,22 +1,23 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(unused_imports)]
+#![allow(unused_assignments)]
+#![allow(unused_mut)]
 extern crate core;
 
 use colored::*;
-
-#[allow(dead_code, unused_imports)]
-mod deep_learning;
+mod rust_learn;
 mod examples;
-mod utils;
 
 use crate::examples::banknote::bank_note_auth_example;
-use crate::examples::xor::xor_example;
 use crate::examples::login_bot_detector::login_bot_detector;
 use crate::examples::checkout_bot_detector::checkout_bot_detector;
+use crate::examples::mnist::mnist_example;
 
 fn main() {
-    // xor_example();
-    // checkout_bot_detector();
-     bank_note_auth_example();
-    // login_bot_detector();
-
+       mnist_example();
+       // checkout_bot_detector();
+       // bank_note_auth_example();
+       // login_bot_detector();
 }
 

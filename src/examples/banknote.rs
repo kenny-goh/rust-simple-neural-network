@@ -2,22 +2,22 @@
 
 use std::fs;
 use std::path::Path;
-use ndarray::{arr2, Array2};
+use ndarray::{arr2};
 use colored::*;
-use crate::deep_learning::activation::Activation;
-use crate::deep_learning::costs::Cost;
-use crate::deep_learning::neural_net::{NeuralNet};
-use crate::deep_learning::optimizer::Optimizer;
-use crate::deep_learning::parameters::TrainParameters;
-use crate::deep_learning::tensor2d::{RandomWeightInitStrategy, Tensor2D};
-use crate::deep_learning::types::MetaLayer;
+use crate::rust_learn::activation::Activation;
+use crate::rust_learn::costs::Cost;
+use crate::rust_learn::neural_net::{NeuralNet};
+use crate::rust_learn::optimizer::Optimizer;
+use crate::rust_learn::parameters::TrainParameters;
+use crate::rust_learn::tensor2d::{WeightInitStrategy, Tensor2D};
+use crate::rust_learn::types::MetaLayer;
 
 pub fn bank_note_auth_example() {
 
     let mut net = NeuralNet::new(4, &[
-        MetaLayer::Dense(30, Activation::LeakRelu),
+        MetaLayer::Dense(30, Activation::LeakyRelu),
         MetaLayer::Dense(1, Activation::Sigmoid)],
-                                 &RandomWeightInitStrategy::Xavier
+                                 &WeightInitStrategy::Xavier
     );
 
     let raw_file_content =
@@ -41,14 +41,14 @@ pub fn bank_note_auth_example() {
                   &y_train,
                   &TrainParameters::default()
                        .cost(Cost::CrossEntropy)
-                       .learning_rate(0.005)
+                       .learning_rate(0.2)
                        .learning_rate_decay(0.5)
                        .l2(0.01)
                        .optimizer_rms_props(0.9)
-                       .batch_size(32)
-                       .iterations(Some(1000))
-                       .target_stop_condition(Some(99.999))
-                  //.gradient_clipping(Some((-1.,1.)))
+                       .batch_size(64)
+                       .iterations(Some(5000))
+                        .target_stop_condition(None)
+                       // .gradient_clipping(Some((-10.,10.)))
         );
 
         //nnet.save_weights("./model/banknote_deep.json");

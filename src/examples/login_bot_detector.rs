@@ -3,13 +3,12 @@ use std::{f32, fs};
 use std::path::Path;
 use ndarray::{arr2, array, Array2};
 use colored::*;
-use crate::deep_learning::activation::Activation;
-use crate::deep_learning::costs::Cost;
-use crate::deep_learning::neural_net::NeuralNet;
-use crate::deep_learning::parameters::TrainParameters;
-use crate::deep_learning::tensor2d::{RandomWeightInitStrategy, Tensor2D};
-use crate::deep_learning::types::MetaLayer;
-use crate::utils::Utils;
+use crate::rust_learn::activation::Activation;
+use crate::rust_learn::costs::Cost;
+use crate::rust_learn::neural_net::NeuralNet;
+use crate::rust_learn::parameters::TrainParameters;
+use crate::rust_learn::tensor2d::{WeightInitStrategy, Tensor2D};
+use crate::rust_learn::types::MetaLayer;
 
 const SCALING_DURATION: f32 = 180.;
 const SCALING_CLICK: f32 = 100.;
@@ -22,9 +21,9 @@ pub fn login_bot_detector() {
 
 
     let mut net = NeuralNet::new(6, &[
-        MetaLayer::Dense(30, Activation::LeakRelu),
+        MetaLayer::Dense(30, Activation::LeakyRelu),
         MetaLayer::Dense(1, Activation::Sigmoid)],
-                                 &RandomWeightInitStrategy::Xavier
+                                 &WeightInitStrategy::Xavier
     );
     let raw_file_content =
         fs::read_to_string("./data/login_data.csv").expect("File is missing!");

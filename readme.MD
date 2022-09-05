@@ -83,7 +83,7 @@ Test Accuracy: 100 %
   - Drop Out Layer
   - Batch Norm
 - GPU support
-  - Refactor the code so that NDArray is one of the available 'backend' for linear algebra and vector operations
+  [x]Refactor the code so that NDArray is one of the available 'backend' for linear algebra and vector operations
   - Add support for Firebase or WebGPU backend
 - Testing
   - Minst dataset
@@ -101,5 +101,11 @@ Kenny Goh
 This project is licensed under the MIT License 
 
 
+otal time in millis: 776994
+Number of epoch: 53
+Number of iterations: 50001
+Dev Accuracy: 89.9 %
+Dev Accuracy: 90.62 %
+Test Accuracy: 90.72 %
 
 

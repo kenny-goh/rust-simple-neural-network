@@ -1,5 +1,5 @@
 [package]
-name = "rust-deep-learning"
+name = "rust_deep_learning"
 version = "0.1.0"
 edition = "2021"
 
@@ -17,6 +17,7 @@ serde_json = "1.0"
 itertools = "0.10.3"
 serde = { version= "1.0.144", features = ["derive"] }
 colored = "2.0.0"
+mnist_read = "1.0.1"
 
 
 
