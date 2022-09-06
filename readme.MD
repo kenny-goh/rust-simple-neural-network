@@ -3,15 +3,16 @@
 I have forgotten what I have learned about deep learning two years ago, so this is a curiosity project to relearn deep learning while learning Rust at the same time.
 
 ## Description
-The goal of this project is to simply develop a feed-forward network (MLP) from the ground up that 
-is good enough to solve the MNIST classification problem using Rust.
+The goal of this project is to develop a deep feed-forward network from the ground up that 
+is good enough to solve the [MNIST classification problem](https://en.wikipedia.org/wiki/MNIST_database) 
+using Rust.
 
 At the bare minimum, the library will implement the following features:
 
-- Minimalistic KERAS like implementation that can solve MNIST digit classification problem. Should support forward based network with the following featuers:
+- Minimalistic KERAS like implementation that can solve MNIST digit classification problem. Should support deep-forward based network with the following features:
   - [x] NN layers (Dense)
   - [x] Mini-batching
-  - [x] Activation (Sigmoid, Tanh, Relu ) 
+  - [x] Activation (Sigmoid, Tanh, Relu, Softmax ) 
   - SGD 
     - [x] Vanilla
     - [x] Momentum
@@ -22,13 +23,12 @@ At the bare minimum, the library will implement the following features:
     - [x] Decay learning rate
     - Regularization
       - [x] L2, 
-      - Dropout
-  - [x] Can train up to 97% accuracy on MNIST dataset
+      - [x] Dropout
+  - [x] Can train up to 98% accuracy on MNIST dataset
 
 - Stretch target:
   - Accelerate the training / prediction using GPU acceleration.
-  - Softmax activation function (Derivative of softmax is tricky to implement with NDArray)
-  - Can train up to 98% accuracy on MNIST dataset
+
 
 ## Toy example to solve XOR problem
 ```rust
@@ -59,7 +59,6 @@ At the bare minimum, the library will implement the following features:
 
     let predictions = net.predict(&x_predict);
     println!("Test Accuracy: {} %", NeuralNet::calculate_accuracy(&y, &predictions).to_string().bold());
-
 ```
 
 ## Getting Started
@@ -72,49 +71,76 @@ At the bare minimum, the library will implement the following features:
 Cargo build #This will build the project
 Cargo run --release # This will run the simple neural network example training and predicting mnist digit recognition problem.
 # The program will emit the following output
+Model does not exits, training from scratch...
 *****************************************
  Epoch: 0
 *****************************************
-Batch 500   Test Accuracy: 90    Costs: 0.149351
-Total time in millis: 16009
+Batch 100   Dev Accuracy: 58.4  Eval Accuracy: 49.3  Costs: 0.668029
+Batch 200   Dev Accuracy: 76.9  Eval Accuracy: 77.8  Costs: 0.483335
+Batch 300   Dev Accuracy: 86.1  Eval Accuracy: 86.7  Costs: 0.332205
+Batch 400   Dev Accuracy: 87.6  Eval Accuracy: 88.2  Costs: 0.291948
+Batch 500   Dev Accuracy: 89.2  Eval Accuracy: 89.7  Costs: 0.247547
+Batch 600   Dev Accuracy: 87.6  Eval Accuracy: 89.9  Costs: 0.276564
+Batch 700   Dev Accuracy: 89.2  Eval Accuracy: 89.6  Costs: 0.219311
+Batch 800   Dev Accuracy: 80    Eval Accuracy: 90.2  Costs: 0.306882
+Batch 900   Dev Accuracy: 93.8  Eval Accuracy: 91.5  Costs: 0.132207
+Total time in millis: 13880
 Number of epoch: 0
 Number of iterations: 938
-Dev Accuracy: 90 %
+Dev Accuracy: 93.84615 %
 *****************************************
  Epoch: 1
 *****************************************
-Batch 62    Test Accuracy: 95.6  Costs: 0.037166
-Batch 562   Test Accuracy: 95    Costs: 0.067823
-Total time in millis: 32375
+Batch 62    Dev Accuracy: 100   Eval Accuracy: 92    Costs: 0.063227
+Batch 162   Dev Accuracy: 96.9  Eval Accuracy: 92.7  Costs: 0.135550
+Batch 262   Dev Accuracy: 92.3  Eval Accuracy: 92.9  Costs: 0.173187
+Batch 362   Dev Accuracy: 95.3  Eval Accuracy: 93.1  Costs: 0.139057
+Batch 462   Dev Accuracy: 93.8  Eval Accuracy: 94    Costs: 0.163107
+Batch 562   Dev Accuracy: 96.9  Eval Accuracy: 93.8  Costs: 0.137667
+Batch 662   Dev Accuracy: 90.7  Eval Accuracy: 93.7  Costs: 0.281303
+Batch 762   Dev Accuracy: 98.4  Eval Accuracy: 94.6  Costs: 0.072723
+Batch 862   Dev Accuracy: 95.3  Eval Accuracy: 94.2  Costs: 0.114708
+Total time in millis: 27449
 Number of epoch: 1
 Number of iterations: 1876
-Dev Accuracy: 95 %
+Dev Accuracy: 95.38461 %
 *****************************************
  Epoch: 2
 *****************************************
-Batch 124   Test Accuracy: 96    Costs: 0.067899
-Batch 624   Test Accuracy: 95.8  Costs: 0.023466
-Total time in millis: 49012
+Batch 24    Dev Accuracy: 95.3  Eval Accuracy: 94.3  Costs: 0.126417
+Batch 124   Dev Accuracy: 92.3  Eval Accuracy: 94.5  Costs: 0.153767
+Batch 224   Dev Accuracy: 92.3  Eval Accuracy: 94.6  Costs: 0.171772
+Batch 324   Dev Accuracy: 92.3  Eval Accuracy: 95.8  Costs: 0.224238
+Batch 424   Dev Accuracy: 96.9  Eval Accuracy: 94.7  Costs: 0.092061
+Batch 524   Dev Accuracy: 92.3  Eval Accuracy: 95.3  Costs: 0.115753
+Batch 624   Dev Accuracy: 96.9  Eval Accuracy: 95.6  Costs: 0.106947
+Batch 724   Dev Accuracy: 84.6  Eval Accuracy: 95.2  Costs: 0.232226
+Batch 824   Dev Accuracy: 93.8  Eval Accuracy: 95.5  Costs: 0.193509
+Batch 924   Dev Accuracy: 100   Eval Accuracy: 95.2  Costs: 0.006374
+Total time in millis: 41780
 Number of epoch: 2
 Number of iterations: 2814
-Dev Accuracy: 95.8 %
+Dev Accuracy: 100 %
+
+....
+
 *****************************************
- Epoch: 3
+ Epoch: 9
 *****************************************
-Batch 186   Test Accuracy: 95.8  Costs: 0.114590
-Batch 686   Test Accuracy: 96.6  Costs: 0.044832
-Total time in millis: 65355
-Number of epoch: 3
-Number of iterations: 3752
-Dev Accuracy: 96.6 %
-*****************************************
- Epoch: 4
-*****************************************
-Batch 248   Test Accuracy: 96.6  Costs: 0.045624
-Batch 748   Test Accuracy: 96.8  Costs: 0.000666
-Total time in millis: 81910
-Number of epoch: 4
-Number of iterations: 4690
+Batch 58    Dev Accuracy: 98.4  Eval Accuracy: 97.2  Costs: 0.038873
+Batch 158   Dev Accuracy: 98.4  Eval Accuracy: 97.6  Costs: 0.033776
+Batch 258   Dev Accuracy: 100   Eval Accuracy: 97.5  Costs: 0.025604
+Batch 358   Dev Accuracy: 100   Eval Accuracy: 97.7  Costs: 0.030431
+Batch 458   Dev Accuracy: 98.4  Eval Accuracy: 97.2  Costs: 0.043888
+Batch 558   Dev Accuracy: 100   Eval Accuracy: 97.5  Costs: 0.024426
+Batch 658   Dev Accuracy: 100   Eval Accuracy: 98    Costs: 0.024856
+
+********* Halt due target stop condition met ************
+Total time in millis: 134647
+Number of epoch: 9
+Number of iterations: 9100
+Dev Accuracy: 99.195 %
+Test Accuracy: 98.049995 %
 ```
 
 ## Authors
@@ -125,7 +151,6 @@ Kenny Goh
     * Initial Release
 
 ## License
-
 This project is licensed under the MIT License 
 
 

@@ -286,24 +286,36 @@ impl Tensor2D {
     }
 
     pub fn softmax(&self)-> Tensor2D {
-        // self.sigmoid()
         match self {
             Tensor2D::NDArray(array) => {
-                // fixme: very inefficient
                 let cols = array.shape()[0];
                 let rows = array.shape()[1];
-                let mut max_of_each_rows: Vec<f32> = vec![];
-                for i in 0..rows {
-                    let row = &array.slice(s![.., i]);
-                    let row_max = *row.max().unwrap();
-                    max_of_each_rows.push(row_max);
-                }
-                let max_of_each_rows_2d = Array2::from_shape_vec((rows, 1), max_of_each_rows).unwrap().reversed_axes();
-                let ones: Array2<f32> = Array2::ones((cols, 1));
-                let max: Array2<f32> = ones.dot(&max_of_each_rows_2d);
+
+                // Maximum of each cols
+                // e.g [[1,5,  ..]
+                //      [2,10, ..]
+                //      [3,2,  ..]]
+                // -> [[3,10,..]]
+                let max_of_each_rows = NDArrayUtils::max_axis_0(array);
+                let max = NDArrayUtils::tile_rows(cols, rows, max_of_each_rows);
+
+                // Shift x by subtracting max (for numerical stable softmax to allow large values)
+                // e.g [[1-3,5-10,  ..]
+                //      [2-3,10-10, ..]
+                //      [3-3,2-10,  ..]]
+                // ->  [[-2,-5,  ..]
+                //      [-1,0, ..]
+                //      [0,-8,  ..]]
                 let shift_x = array - max;
                 let exponents = shift_x.mapv(|x| f32::exp(x));
+
+                // Sum of each cols
+                // e.g [[1,5,  ..]
+                //      [2,10, ..]
+                //      [3,2,  ..]]
+                // -> [[6,17,..]]
                 let sum_of_exponents = exponents.sum_axis(Axis(0));
+
                 let softmax = exponents /  sum_of_exponents;
                 Tensor2D::NDArray(softmax)
             }
@@ -313,26 +325,22 @@ impl Tensor2D {
     pub fn softmax_derivative(&self)->Tensor2D {
         match self {
             Tensor2D::NDArray(array) => {
-                // fixme: very inefficient
-
                 let exponents = array.mapv(|x| f32::exp(x));
                 let cols = array.shape()[0];
                 let rows = array.shape()[1];
+
+                // Sum of exponents - exponents
                 let sums_of_exponents = exponents.sum_axis(Axis(0));
                 let vec_sum_of_exponents = sums_of_exponents.clone().into_raw_vec();
-                let sum_of_exponents_2d = Array2::from_shape_vec((rows, 1),
-                                                                 vec_sum_of_exponents).unwrap().reversed_axes();
-
-                let ones: Array2<f32> = Array2::ones((cols, 1));
-                let exponent_sums_matrix: Array2<f32> = ones.dot(&sum_of_exponents_2d);
+                let exponent_sums_matrix: Array2<f32> = NDArrayUtils::tile_rows(cols, rows, vec_sum_of_exponents);
                 let exponents_sums_sub =  exponent_sums_matrix - &exponents;
 
+                // sums of exponents squared
                 let sums_squared = &sums_of_exponents * &sums_of_exponents;
                 let vec_sum_of_squared_exponents = sums_squared.clone().into_raw_vec();
-                let sums_squared_exponents_2d = Array2::from_shape_vec((rows, 1),
-                                                                       vec_sum_of_squared_exponents).unwrap().reversed_axes();
-                let exponent_sums_squared_matrix = &ones.dot(&sums_squared_exponents_2d);
+                let exponent_sums_squared_matrix =  NDArrayUtils::tile_rows(cols, rows, vec_sum_of_squared_exponents);
 
+                // dz = exponents * (sum of exponents - exponents / sum of exponents squared )
                 let derivatives = &exponents * (exponents_sums_sub / (exponent_sums_squared_matrix));
 
                 Tensor2D::NDArray(derivatives)
@@ -454,3 +462,36 @@ real_op_tensor!(Mul<Tensor2D>, f32, mul, Tensor2D, | real: f32, arr: Array2<f32>
 real_op_tensor!(Mul<&Tensor2D>, f32, mul, &Tensor2D, | real: f32, arr: &Array2<f32> |  real * arr );
 real_op_tensor!(Div<Tensor2D>, f32, div, Tensor2D, | real: f32, arr: Array2<f32> |  real / arr );
 real_op_tensor!(Div<&Tensor2D>, f32, div, &Tensor2D, | real: f32, arr: &Array2<f32> |  real / arr );
+
+struct NDArrayUtils {
+
+}
+impl NDArrayUtils {
+
+    // Repeat columns (axis 0) N times vertically
+    // cols: 3
+    // rows: 4
+    // vector: [1,2,3]
+    // [1, 2, 3]
+    // [1, 2, 3]
+    // [1, 2, 3]
+    // [1, 2, 3]
+    fn tile_rows(cols: usize, rows: usize, vector: Vec<f32>) -> Array2<f32> {
+        let vector_2d = Array2::from_shape_vec((rows, 1),
+                                               vector).unwrap().reversed_axes();
+        let ones: Array2<f32> = Array2::ones((cols, 1));
+        ones.dot(&vector_2d)
+    }
+
+    // Move this to NDArray utils
+    fn max_axis_0(array: &Array2<f32>) -> Vec<f32> {
+        let rows = array.shape()[1];
+        let mut max_of_each_rows: Vec<f32> = vec![];
+        for i in 0..rows {
+            let row = &array.slice(s![.., i]);
+            let row_max = *row.max().unwrap();
+            max_of_each_rows.push(row_max);
+        }
+        max_of_each_rows
+    }
+}

@@ -42,8 +42,9 @@ pub fn mnist_example() {
                   &y_train,
                   &TrainParameters::default()
                       .cost(Cost::CrossEntropy)
-                      .learning_rate(0.09)
+                      .learning_rate(0.1)
                       // .learning_rate_decay(0.5)
+                      .optimizer_sgd_momentum(0.9)
                       // .optimizer_rms_props(0.9)
                       // .l2(0.0)
                       .batch_size(64)
