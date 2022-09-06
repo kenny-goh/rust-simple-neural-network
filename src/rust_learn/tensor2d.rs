@@ -169,7 +169,7 @@ impl Tensor2D {
     pub fn log(&self) -> Tensor2D {
         match self {
             Tensor2D::NDArray(array) => {
-                Tensor2D::NDArray(array.mapv(|x| f32::log10(x)))
+                Tensor2D::NDArray(array.mapv(|x| f32::log10(x.max( 1e-20))))
             }
         }
     }
@@ -292,17 +292,20 @@ impl Tensor2D {
         }
     }
 
-    // to implement:
-    // def backward(self):
-    // for i in range(len(self.value)):
-    // for j in range(len(self.error)):
-    // if i == j:
-    // self.gradient[i] = self.value[i] * (1-self.input[i))
-    // else:
-    // self.gradient[i] = -self.value[i]*self.input[j]
     pub fn softmax_derivative(&self)->Tensor2D {
+        // formula:
         // single formula to calculate the Jacobian derivative of the Softmax function is
         // np.diag(S) - (S_matrix * np.transpose(S_matrix))
+        //
+        // python equivalent for non-vectorized version
+        // to implement:
+        // def backward(self):
+        // for i in range(len(self.value)):
+        // for j in range(len(self.error)):
+        // if i == j:
+        // self.gradient[i] = self.value[i] * (1-self.input[i))
+        // else:
+        // self.gradient[i] = -self.value[i]*self.input[j]
         panic!("Not implemented")
     }
 
@@ -389,6 +392,9 @@ impl fmt::Display for Tensor2D {
         }
     }
 }
+
+
+// macro to the rescue, this would have bloated to over 400 lines!
 
 unary_tensor_op!(Neg, neg, |arr: Array2<f32> | -arr);
 

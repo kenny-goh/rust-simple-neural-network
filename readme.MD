@@ -1,38 +1,34 @@
 # Simple neural network written in Rust
 
 I have forgotten what I have learned about deep learning two years ago, so this is a curiosity project to relearn deep learning while learning Rust at the same time.
+
 ## Description
+The goal of this project is to simply develop a feed-forward network (MLP) from the ground up that 
+is good enough to solve the MNIST classification problem using Rust.
 
-The goal of this project is to simply develop a feed-forward network that is good enough to solve the MNIST classification problem using Rust.
+At the bare minimum, the library will implement the following features:
 
-At this stage of the project, I am able to get the model to predict mnist problem with 97% accuracy,
-with half-baked implementation without a softmax activation function
-(I am using SIGMOID as the activation function, it works but it is not efficient.)
-
-Once I have completed the softmax activation function (implementing softmax with NDArray is really a pain in the butt),
-I believe it will be possible to get good training/prediction results in less than 5 minutes
-on CPU.
-
-If I managed to do achieve that, I will see if I can optimise the learning using GPU acceleration.
-I am thinking of Rust GPU (https://github.com/EmbarkStudios/rust-gpu)  but may potentially
-use some other libraries depending on effort.
-
-
-So to summarise:
 - Minimalistic KERAS like implementation that can solve MNIST digit classification problem. Should support forward based network with the following featuers:
-  - NN layers (Dense)
-  - Activation (Sigmoid, Tanh, Relu and Softmax)
-  - SGD (Stochastic Gradient Decent)
-    - Vanilla
-    - Momentum
-    - RMSProps
+  - [x] NN layers (Dense)
+  - [x] Mini-batching
+  - [x]Activation (Sigmoid, Tanh, Relu ) 
+  - SGD 
+    - [x] Vanilla
+    - [x] Momentum
+    - [x] RMSProps
     - Adams
   - Hyper-parameters
-    - Learning rate
-    - Decay learning rate
-    - Regularization (L2, Dropout, etc..)
+    - [x] Learning rate
+    - [x] Decay learning rate
+    - Regularization
+      - [x] L2, 
+      - Dropout
+  - Can train up to 97% accuracy on MNIST dataset
 
-- Stretch target: Accelerate the training / prediction using GPU acceleration.
+- Stretch target:
+  - Accelerate the training / prediction using GPU acceleration.
+  - Softmax activation function (Derivative of softmax is tricky to implement with NDArray)
+  - Can train up to 98% accuracy on MNIST dataset
 
 ## Toy example to solve XOR problem
 ```rust

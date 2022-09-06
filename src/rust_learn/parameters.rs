@@ -52,7 +52,6 @@ impl TrainParameters {
         }
     }
 
-
     builder_field!( log_interval, usize);
     builder_field!( learning_rate, f32);
     builder_field!( learning_rate_decay, f32);

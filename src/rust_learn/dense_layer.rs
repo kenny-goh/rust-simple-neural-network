@@ -4,7 +4,7 @@ use crate::rust_learn::parameters::TrainParameters;
 use crate::rust_learn::tensor2d::{WeightInitStrategy, Tensor2D};
 
 /// This class needs to be refactored, its a mess.
-///
+/// The learning rate logic should be taken out of this class.
 pub struct DenseLayer {
     activation: Activation,
     weights: Tensor2D,

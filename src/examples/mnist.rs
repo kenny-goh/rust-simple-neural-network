@@ -21,24 +21,25 @@ pub fn mnist_example() {
     let y_predict = Tensor2D::NDArray(array_y_predict.reversed_axes());
 
     let mut net = NeuralNet::new(784, &[
-        MetaLayer::Dense(1000, Activation::Relu),
-        MetaLayer::Dense(500, Activation::Relu),
+        MetaLayer::Dense(1000, Activation::LeakyRelu),
+        MetaLayer::Dense(500, Activation::LeakyRelu),
         MetaLayer::Dense(10, Activation::Sigmoid)],
                      &WeightInitStrategy::Xavier
     );
 
-    if Path::new("./model/mnist.json").exists() {
+    if Path::new("./model/mnist_97.json").exists() {
         println!("Model exists, loading model from file.");
-        net.load_weights("./model/mnist.json");
+        net.load_weights("./model/mnist_97.json");
     }
     else {
         println!("Model does not exits, training from scratch...");
 
+        // Training with these parameters will take around 30 seconds to hit 97% dev accuracy
         net.train(&x_train,
                   &y_train,
                   &TrainParameters::default()
-                      .cost(Cost::MeanSquareError)
-                      .learning_rate(0.005)
+                      .cost(Cost::CrossEntropy)
+                      .learning_rate(0.0005)
                       .learning_rate_decay(0.3)
                       .optimizer_rms_props(0.9)
                       // .optimizer_sgd_momentum(0.9)
@@ -48,9 +49,9 @@ pub fn mnist_example() {
                       .log_interval(500)
                       .evaluation_dataset(Some((Tensor2D::NDArray(subset_x_predict),
                                                 Tensor2D::NDArray(subset_y_predict))))
-                      .target_stop_condition(Some(98.00)));
+                      .target_stop_condition(Some(97.00)));
 
-        net.save_weights("./model/mnist.json");
+        net.save_weights("./model/mnist_97.json");
     }
 
     {
@@ -101,6 +102,7 @@ fn load_mnist_dataset(testing: bool) -> (ndarray::Array2<f32>, ndarray::Array2<f
 
     // convert to one hot encoding
 
+    // todo: create a function to do this smarter
     let mut one_hot_encoded_labels = vec![];
     for label in labels.into_iter() {
         if  label == 0. {
@@ -164,7 +166,6 @@ fn load_mnist_dataset(testing: bool) -> (ndarray::Array2<f32>, ndarray::Array2<f
             one_hot_encoded_labels.push(encoding)
         }
     }
-    println!("SIZE: {}", &one_hot_encoded_labels.len());
     let encoded_label = arr2(one_hot_encoded_labels[..].try_into().unwrap());
     return (
         ndarray::Array::from_shape_vec((images.len() / img_size, img_size), images).expect("Data shape wrong"),
