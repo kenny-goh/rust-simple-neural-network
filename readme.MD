@@ -23,7 +23,7 @@ At the bare minimum, the library will implement the following features:
     - Regularization
       - [x] L2, 
       - Dropout
-  - Can train up to 97% accuracy on MNIST dataset
+  - [x] Can train up to 97% accuracy on MNIST dataset
 
 - Stretch target:
   - Accelerate the training / prediction using GPU acceleration.
