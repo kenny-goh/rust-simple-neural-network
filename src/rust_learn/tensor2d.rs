@@ -2,7 +2,7 @@ use core::f32;
 use std::{fmt};
 use std::ops::{Add, Div, Mul, Neg, Sub};
 use itertools::izip;
-use ndarray::{arr1, arr2, Array, array, Array2, Axis, s};
+use ndarray::{arr1, arr2, Array, array, Array2, Axis, NdProducer, s};
 use ndarray_rand::RandomExt;
 use ndarray_stats::QuantileExt;
 use serde::{Serialize, Deserialize};
@@ -100,6 +100,12 @@ impl Tensor2D {
                 Tensor2D::NDArray(xavier_weights)
             }
         }
+    }
+
+    pub fn ndarray_random_mask(cols: usize, rows: usize, probs: f32) ->Tensor2D {
+        let mut random = Array::random((cols, rows), Uniform::new(0., 1.));
+        random = random.mapv(|x| if x >= probs {1.0} else {0.0} );
+        Tensor2D::NDArray(random)
     }
 
     pub fn ndarray_init_zeroes(cols: usize) ->Tensor2D {
@@ -280,33 +286,58 @@ impl Tensor2D {
     }
 
     pub fn softmax(&self)-> Tensor2D {
+        // self.sigmoid()
         match self {
             Tensor2D::NDArray(array) => {
-                let max = *array.max().unwrap();
+                // fixme: very inefficient
+                let cols = array.shape()[0];
+                let rows = array.shape()[1];
+                let mut max_of_each_rows: Vec<f32> = vec![];
+                for i in 0..rows {
+                    let row = &array.slice(s![.., i]);
+                    let row_max = *row.max().unwrap();
+                    max_of_each_rows.push(row_max);
+                }
+                let max_of_each_rows_2d = Array2::from_shape_vec((rows, 1), max_of_each_rows).unwrap().reversed_axes();
+                let ones: Array2<f32> = Array2::ones((cols, 1));
+                let max: Array2<f32> = ones.dot(&max_of_each_rows_2d);
                 let shift_x = array - max;
                 let exponents = shift_x.mapv(|x| f32::exp(x));
-                let sum_of_exponents = exponents.sum();
-                let softmax = exponents / sum_of_exponents;
+                let sum_of_exponents = exponents.sum_axis(Axis(0));
+                let softmax = exponents /  sum_of_exponents;
                 Tensor2D::NDArray(softmax)
             }
         }
     }
 
     pub fn softmax_derivative(&self)->Tensor2D {
-        // formula:
-        // single formula to calculate the Jacobian derivative of the Softmax function is
-        // np.diag(S) - (S_matrix * np.transpose(S_matrix))
-        //
-        // python equivalent for non-vectorized version
-        // to implement:
-        // def backward(self):
-        // for i in range(len(self.value)):
-        // for j in range(len(self.error)):
-        // if i == j:
-        // self.gradient[i] = self.value[i] * (1-self.input[i))
-        // else:
-        // self.gradient[i] = -self.value[i]*self.input[j]
-        panic!("Not implemented")
+        match self {
+            Tensor2D::NDArray(array) => {
+                // fixme: very inefficient
+
+                let exponents = array.mapv(|x| f32::exp(x));
+                let cols = array.shape()[0];
+                let rows = array.shape()[1];
+                let sums_of_exponents = exponents.sum_axis(Axis(0));
+                let vec_sum_of_exponents = sums_of_exponents.clone().into_raw_vec();
+                let sum_of_exponents_2d = Array2::from_shape_vec((rows, 1),
+                                                                 vec_sum_of_exponents).unwrap().reversed_axes();
+
+                let ones: Array2<f32> = Array2::ones((cols, 1));
+                let exponent_sums_matrix: Array2<f32> = ones.dot(&sum_of_exponents_2d);
+                let exponents_sums_sub =  exponent_sums_matrix - &exponents;
+
+                let sums_squared = &sums_of_exponents * &sums_of_exponents;
+                let vec_sum_of_squared_exponents = sums_squared.clone().into_raw_vec();
+                let sums_squared_exponents_2d = Array2::from_shape_vec((rows, 1),
+                                                                       vec_sum_of_squared_exponents).unwrap().reversed_axes();
+                let exponent_sums_squared_matrix = &ones.dot(&sums_squared_exponents_2d);
+
+                let derivatives = &exponents * (exponents_sums_sub / (exponent_sums_squared_matrix));
+
+                Tensor2D::NDArray(derivatives)
+            }
+        }
     }
 
     pub fn derivative_leaky_relu(&self) -> Tensor2D {

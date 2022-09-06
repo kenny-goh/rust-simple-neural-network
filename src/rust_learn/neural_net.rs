@@ -8,6 +8,7 @@ use crate::rust_learn::types::{Layer, MetaLayer};
 use std::io::{Write, Error, Read};
 use std::time::Instant;
 use ndarray::s;
+use crate::rust_learn::dropout_layer::DropoutLayer;
 use crate::rust_learn::parameters::TrainParameters;
 
 /// NeuralNet is a configurable deep learning 'model' that can run training on input data and labels
@@ -56,6 +57,7 @@ impl NeuralNet {
                                                          weight_init_strategy)));
                 layer_inputs = *size;
             }
+            _ => {panic!("Unreachable code")}
         }
 
         for meta_layer in metalayers_iter {
@@ -66,6 +68,9 @@ impl NeuralNet {
                                                              *activation,
                                                              weight_init_strategy)));
                     layer_inputs = *size;
+                }
+                MetaLayer::Dropout(probs) => {
+                    layers.push(Layer::Dropout(DropoutLayer::new(*probs)));
                 }
             }
         }
@@ -119,10 +124,10 @@ impl NeuralNet {
         let mut iterations_index = 0;
         let mut halt = false;
         let mut accuracy_dev = 0_f32;
+        let mut accuracy_eval = 0_f32;
         let mut epoch = 0;
         let mut costs = 0_f32;
         let now = Instant::now();
-        let eval_set_name = if params.evaluation_dataset.is_some() { "Test"} else { "Dev" };
 
         loop {
             println!("{}","*****************************************");
@@ -180,16 +185,19 @@ impl NeuralNet {
                     if params.evaluation_dataset.is_some() {
                         let (eval_input, eval_output ) = params.evaluation_dataset.as_ref().unwrap();
                         let predicted = self.predict(&eval_input);
-                        accuracy_dev = NeuralNet::calculate_accuracy(eval_output, &predicted);
-                    } else {
-                        let predicted = self.predict(&batch_input);
-                        accuracy_dev = NeuralNet::calculate_accuracy(batch_output, &predicted);
+                        accuracy_eval = NeuralNet::calculate_accuracy(eval_output, &predicted);
                     }
-                    println!("Batch {:5} {} Accuracy: {:5.4} Costs: {:.8}", batch_index.to_string().green(), eval_set_name, accuracy_dev.to_string().green(), costs.to_string().green());
+                    let predicted = self.predict(&batch_input);
+                    accuracy_dev = NeuralNet::calculate_accuracy(batch_output, &predicted);
+                    println!("Batch {:5} Dev Accuracy: {:5.4} Eval Accuracy: {:5.4} Costs: {:.8}",
+                             batch_index.to_string().green(),
+                             accuracy_dev.to_string().green(),
+                             accuracy_eval.to_string().green(),
+                             costs.to_string().green());
                 }
 
                 if params.target_stop_condition.is_some() {
-                    if accuracy_dev >= *params.target_stop_condition.as_ref().unwrap() {
+                    if accuracy_eval >= *params.target_stop_condition.as_ref().unwrap() {
                         println!("\n{}\n", "********* Halt due target stop condition met ************".blue());
                         halt = true;
                         break;
@@ -253,6 +261,10 @@ impl NeuralNet {
                     let (a, z) = dense_layer.forward_props(&activation);
                     (a, Some(z))
                 }
+                Layer::Dropout(dropout_layer) => {
+                    let a = dropout_layer.forward_props(&activation, false);
+                    (a, None)
+                }
             };
             output_layers.push((activation, z));
             activation = a;
@@ -278,6 +290,9 @@ impl NeuralNet {
                     params,
                 )
             }
+            Layer::Dropout(dropout_layer) => {
+                dropout_layer.back_props(partial_error)
+            }
         }
     }
 
@@ -286,6 +301,10 @@ impl NeuralNet {
             Layer::Dense(dense_layer) => {
                 let (a, z) = dense_layer.forward_props(input);
                 (a, Some(z))
+            }
+            Layer::Dropout(dropout_layer) => {
+                let a = dropout_layer.forward_props(input, true);
+                (a, None)
             }
         };
         (a, z)
@@ -299,6 +318,10 @@ impl NeuralNet {
                 Layer::Dense(dense_layer) => {
                     let (a, z) = dense_layer.forward_props(&activation);
                     (a, Some(z))
+                }
+                Layer::Dropout(dropout_layer) => {
+                    let a = dropout_layer.forward_props(&activation, false);
+                    (a, None)
                 }
             };
             output_layers.push((activation, z));
@@ -327,6 +350,7 @@ impl NeuralNet {
                     params.insert(format!("b{}", layer_index), b.clone());
                     layer_index += 1;
                 }
+                _ => {}
             };
         }
         NeuralNet::serialize(&params, filename).unwrap();
@@ -345,6 +369,7 @@ impl NeuralNet {
                     dense_layer.set_biases(b);
                     layer_index += 1;
                 }
+                _ => {}
             };
         }
         NeuralNet::serialize(&params, filename).unwrap();

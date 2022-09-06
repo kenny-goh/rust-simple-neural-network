@@ -1,6 +1,7 @@
 use std::path::Path;
 use colored::Colorize;
 use ndarray::{arr2, Array2, Axis, s};
+use rust_deep_learning::rust_learn::dropout_layer::DropoutLayer;
 use crate::rust_learn::activation::Activation;
 use crate::rust_learn::costs::Cost;
 use crate::rust_learn::neural_net::NeuralNet;
@@ -22,14 +23,16 @@ pub fn mnist_example() {
 
     let mut net = NeuralNet::new(784, &[
         MetaLayer::Dense(1000, Activation::LeakyRelu),
+        MetaLayer::Dropout(0.2),
         MetaLayer::Dense(500, Activation::LeakyRelu),
-        MetaLayer::Dense(10, Activation::Sigmoid)],
+        MetaLayer::Dropout(0.2),
+        MetaLayer::Dense(10, Activation::SoftMax)],
                      &WeightInitStrategy::Xavier
     );
 
-    if Path::new("./model/mnist_97.json").exists() {
+    if Path::new("./model/mnist_98.json").exists() {
         println!("Model exists, loading model from file.");
-        net.load_weights("./model/mnist_97.json");
+        net.load_weights("./model/mnist_98.json");
     }
     else {
         println!("Model does not exits, training from scratch...");
@@ -39,19 +42,19 @@ pub fn mnist_example() {
                   &y_train,
                   &TrainParameters::default()
                       .cost(Cost::CrossEntropy)
-                      .learning_rate(0.0005)
-                      .learning_rate_decay(0.3)
-                      .optimizer_rms_props(0.9)
-                      // .optimizer_sgd_momentum(0.9)
-                      .l2(0.2)
+                      .learning_rate(0.09)
+                      // .learning_rate_decay(0.5)
+                      // .optimizer_rms_props(0.9)
+                      // .l2(0.0)
                       .batch_size(64)
                       .iterations(Some(100000))
-                      .log_interval(500)
+                      .log_interval(100)
                       .evaluation_dataset(Some((Tensor2D::NDArray(subset_x_predict),
                                                 Tensor2D::NDArray(subset_y_predict))))
-                      .target_stop_condition(Some(97.00)));
+                      .target_stop_condition(Some(98.00))
+        );
 
-        net.save_weights("./model/mnist_97.json");
+        net.save_weights("./model/mnist_98.json");
     }
 
     {

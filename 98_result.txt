@@ -1,0 +1,181 @@
+architecture:
+
+  let mut net = NeuralNet::new(784, &[
+        MetaLayer::Dense(1000, Activation::LeakyRelu),
+        MetaLayer::Dropout(0.2),
+        MetaLayer::Dense(500, Activation::LeakyRelu),
+        MetaLayer::Dropout(0.2),
+        MetaLayer::Dense(10, Activation::SoftMax)],
+                     &WeightInitStrategy::Xavier
+    );
+
+params:
+  net.train(&x_train,
+                  &y_train,
+                  &TrainParameters::default()
+                      .cost(Cost::CrossEntropy)
+                      .learning_rate(0.09)
+                      .batch_size(64)
+                      .iterations(Some(100000))
+                      .log_interval(100)
+                      .evaluation_dataset(Some((Tensor2D::NDArray(subset_x_predict),
+                                                Tensor2D::NDArray(subset_y_predict))))
+                      .target_stop_condition(Some(98.00))
+
+
+Model does not exits, training from scratch...
+*****************************************
+ Epoch: 0
+*****************************************
+Batch 100   Dev Accuracy: 76.9  Eval Accuracy: 59.1  Costs: 0.635812
+Batch 200   Dev Accuracy: 83.0  Eval Accuracy: 81.5  Costs: 0.479480
+Batch 300   Dev Accuracy: 92.3  Eval Accuracy: 86    Costs: 0.358086
+Batch 400   Dev Accuracy: 92.3  Eval Accuracy: 87.2  Costs: 0.326253
+Batch 500   Dev Accuracy: 92.3  Eval Accuracy: 89.8  Costs: 0.264794
+Batch 600   Dev Accuracy: 89.2  Eval Accuracy: 89.2  Costs: 0.309604
+Batch 700   Dev Accuracy: 93.8  Eval Accuracy: 90.3  Costs: 0.196927
+Batch 800   Dev Accuracy: 90.7  Eval Accuracy: 90.4  Costs: 0.312287
+Batch 900   Dev Accuracy: 98.4  Eval Accuracy: 90.7  Costs: 0.132687
+Total time in millis: 12541
+Number of epoch: 0
+Number of iterations: 938
+Dev Accuracy: 98.46154 %
+*****************************************
+ Epoch: 1
+*****************************************
+Batch 62    Dev Accuracy: 100   Eval Accuracy: 91.7  Costs: 0.108989
+Batch 162   Dev Accuracy: 96.9  Eval Accuracy: 90.8  Costs: 0.131120
+Batch 262   Dev Accuracy: 92.3  Eval Accuracy: 92.7  Costs: 0.181275
+Batch 362   Dev Accuracy: 96.9  Eval Accuracy: 93.4  Costs: 0.146788
+Batch 462   Dev Accuracy: 95.3  Eval Accuracy: 93.4  Costs: 0.134915
+Batch 562   Dev Accuracy: 98.4  Eval Accuracy: 93.3  Costs: 0.121063
+Batch 662   Dev Accuracy: 92.3  Eval Accuracy: 93.4  Costs: 0.264716
+Batch 762   Dev Accuracy: 98.4  Eval Accuracy: 93.8  Costs: 0.076376
+Batch 862   Dev Accuracy: 95.3  Eval Accuracy: 94.2  Costs: 0.121712
+Total time in millis: 25520
+Number of epoch: 1
+Number of iterations: 1876
+Dev Accuracy: 95.38461 %
+*****************************************
+ Epoch: 2
+*****************************************
+Batch 24    Dev Accuracy: 96.9  Eval Accuracy: 94.4  Costs: 0.120586
+Batch 124   Dev Accuracy: 96.9  Eval Accuracy: 94.4  Costs: 0.151034
+Batch 224   Dev Accuracy: 96.9  Eval Accuracy: 94.6  Costs: 0.139678
+Batch 324   Dev Accuracy: 95.3  Eval Accuracy: 94.8  Costs: 0.230030
+Batch 424   Dev Accuracy: 100   Eval Accuracy: 95.2  Costs: 0.101709
+Batch 524   Dev Accuracy: 93.8  Eval Accuracy: 95.2  Costs: 0.154749
+Batch 624   Dev Accuracy: 98.4  Eval Accuracy: 95.2  Costs: 0.073299
+Batch 724   Dev Accuracy: 87.6  Eval Accuracy: 95.3  Costs: 0.265280
+Batch 824   Dev Accuracy: 96.9  Eval Accuracy: 95.6  Costs: 0.178806
+Batch 924   Dev Accuracy: 100   Eval Accuracy: 95.5  Costs: 0.007138
+Total time in millis: 38211
+Number of epoch: 2
+Number of iterations: 2814
+Dev Accuracy: 100 %
+*****************************************
+ Epoch: 3
+*****************************************
+Batch 86    Dev Accuracy: 100   Eval Accuracy: 95.9  Costs: 0.037380
+Batch 186   Dev Accuracy: 96.9  Eval Accuracy: 95.9  Costs: 0.145216
+Batch 286   Dev Accuracy: 98.4  Eval Accuracy: 96    Costs: 0.071008
+Batch 386   Dev Accuracy: 98.4  Eval Accuracy: 95.9  Costs: 0.105362
+Batch 486   Dev Accuracy: 96.9  Eval Accuracy: 96.3  Costs: 0.071825
+Batch 586   Dev Accuracy: 95.3  Eval Accuracy: 96.6  Costs: 0.179944
+Batch 686   Dev Accuracy: 98.4  Eval Accuracy: 96.1  Costs: 0.129420
+Batch 786   Dev Accuracy: 98.4  Eval Accuracy: 96.6  Costs: 0.050132
+Batch 886   Dev Accuracy: 100   Eval Accuracy: 96.5  Costs: 0.077252
+Total time in millis: 50854
+Number of epoch: 3
+Number of iterations: 3752
+Dev Accuracy: 100 %
+*****************************************
+ Epoch: 4
+*****************************************
+Batch 48    Dev Accuracy: 98.4  Eval Accuracy: 96.8  Costs: 0.116946
+Batch 148   Dev Accuracy: 98.4  Eval Accuracy: 96.7  Costs: 0.117568
+Batch 248   Dev Accuracy: 98.4  Eval Accuracy: 96.3  Costs: 0.119975
+Batch 348   Dev Accuracy: 98.4  Eval Accuracy: 96.6  Costs: 0.070920
+Batch 448   Dev Accuracy: 95.3  Eval Accuracy: 96.6  Costs: 0.153953
+Batch 548   Dev Accuracy: 100   Eval Accuracy: 96.8  Costs: 0.101989
+Batch 648   Dev Accuracy: 96.9  Eval Accuracy: 96.7  Costs: 0.126585
+Batch 748   Dev Accuracy: 100   Eval Accuracy: 97.2  Costs: 0.045831
+Batch 848   Dev Accuracy: 98.4  Eval Accuracy: 97.6  Costs: 0.025545
+Total time in millis: 63476
+Number of epoch: 4
+Number of iterations: 4690
+Dev Accuracy: 98.46154 %
+*****************************************
+ Epoch: 5
+*****************************************
+Batch 10    Dev Accuracy: 98.4  Eval Accuracy: 97.1  Costs: 0.096713
+Batch 110   Dev Accuracy: 98.4  Eval Accuracy: 97.3  Costs: 0.155598
+Batch 210   Dev Accuracy: 96.9  Eval Accuracy: 96.6  Costs: 0.070587
+Batch 310   Dev Accuracy: 96.9  Eval Accuracy: 97.2  Costs: 0.113080
+Batch 410   Dev Accuracy: 100   Eval Accuracy: 97.2  Costs: 0.028894
+Batch 510   Dev Accuracy: 100   Eval Accuracy: 97.2  Costs: 0.005271
+Batch 610   Dev Accuracy: 98.4  Eval Accuracy: 97.5  Costs: 0.083104
+Batch 710   Dev Accuracy: 100   Eval Accuracy: 97.7  Costs: 0.068753
+Batch 810   Dev Accuracy: 100   Eval Accuracy: 97.2  Costs: 0.014338
+Batch 910   Dev Accuracy: 100   Eval Accuracy: 97.2  Costs: 0.008149
+Total time in millis: 76139
+Number of epoch: 5
+Number of iterations: 5628
+Dev Accuracy: 100 %
+*****************************************
+ Epoch: 6
+*****************************************
+Batch 72    Dev Accuracy: 100   Eval Accuracy: 97    Costs: 0.012386
+Batch 172   Dev Accuracy: 98.4  Eval Accuracy: 97.3  Costs: 0.098414
+Batch 272   Dev Accuracy: 98.4  Eval Accuracy: 97.5  Costs: 0.057509
+Batch 372   Dev Accuracy: 100   Eval Accuracy: 97.1  Costs: 0.017098
+Batch 472   Dev Accuracy: 100   Eval Accuracy: 97.6  Costs: 0.054123
+Batch 572   Dev Accuracy: 100   Eval Accuracy: 97.3  Costs: 0.012851
+Batch 672   Dev Accuracy: 100   Eval Accuracy: 97.5  Costs: 0.057401
+Batch 772   Dev Accuracy: 100   Eval Accuracy: 97.8  Costs: 0.010662
+Batch 872   Dev Accuracy: 100   Eval Accuracy: 97.7  Costs: 0.031747
+Total time in millis: 88668
+Number of epoch: 6
+Number of iterations: 6566
+Dev Accuracy: 100 %
+*****************************************
+ Epoch: 7
+*****************************************
+Batch 34    Dev Accuracy: 100   Eval Accuracy: 97.6  Costs: 0.013967
+Batch 134   Dev Accuracy: 100   Eval Accuracy: 97.5  Costs: 0.012215
+Batch 234   Dev Accuracy: 100   Eval Accuracy: 97.6  Costs: 0.020935
+Batch 334   Dev Accuracy: 100   Eval Accuracy: 97.6  Costs: 0.028601
+Batch 434   Dev Accuracy: 100   Eval Accuracy: 97.6  Costs: 0.036333
+Batch 534   Dev Accuracy: 100   Eval Accuracy: 97.7  Costs: 0.007580
+Batch 634   Dev Accuracy: 100   Eval Accuracy: 97.6  Costs: 0.034953
+Batch 734   Dev Accuracy: 100   Eval Accuracy: 97.3  Costs: 0.055513
+Batch 834   Dev Accuracy: 100   Eval Accuracy: 98    Costs: 0.016630
+
+********* Halt due target stop condition met ************
+
+Total time in millis: 100264
+Number of epoch: 7
+Number of iterations: 7400
+Dev Accuracy: 100 %
+Dev Accuracy: 98.75833 %
+Dev target NDArray([[0.0, 1.0, 0.0, 0.0, 0.0, ..., 0.0, 0.0, 0.0, 0.0, 0.0],
+ [0.0, 0.0, 0.0, 1.0, 0.0, ..., 0.0, 0.0, 0.0, 0.0, 0.0],
+ [0.0, 0.0, 0.0, 0.0, 0.0, ..., 0.0, 0.0, 0.0, 0.0, 0.0],
+ [0.0, 0.0, 0.0, 0.0, 0.0, ..., 0.0, 1.0, 0.0, 0.0, 0.0],
+ [0.0, 0.0, 1.0, 0.0, 0.0, ..., 0.0, 0.0, 0.0, 0.0, 0.0],
+ [1.0, 0.0, 0.0, 0.0, 0.0, ..., 0.0, 0.0, 1.0, 0.0, 0.0],
+ [0.0, 0.0, 0.0, 0.0, 0.0, ..., 0.0, 0.0, 0.0, 1.0, 0.0],
+ [0.0, 0.0, 0.0, 0.0, 0.0, ..., 0.0, 0.0, 0.0, 0.0, 0.0],
+ [0.0, 0.0, 0.0, 0.0, 0.0, ..., 1.0, 0.0, 0.0, 0.0, 1.0],
+ [0.0, 0.0, 0.0, 0.0, 1.0, ..., 0.0, 0.0, 0.0, 0.0, 0.0]], shape=[10, 60000], strides=[1, 10], layout=Ff (0xa), const ndim=2)
+Dev predict NDArray([[0.0, 1.0, 0.0, 0.0, 0.0, ..., 0.0, 0.0, 0.0, 0.0, 0.0],
+ [0.0, 0.0, 0.0, 1.0, 0.0, ..., 0.0, 0.0, 0.0, 0.0, 0.0],
+ [0.0, 0.0, 0.0, 0.0, 0.0, ..., 0.0, 0.0, 0.0, 0.0, 0.0],
+ [0.0, 0.0, 0.0, 0.0, 0.0, ..., 0.0, 1.0, 0.0, 0.0, 0.0],
+ [0.0, 0.0, 1.0, 0.0, 0.0, ..., 0.0, 0.0, 0.0, 0.0, 0.0],
+ [1.0, 0.0, 0.0, 0.0, 0.0, ..., 0.0, 0.0, 1.0, 0.0, 0.0],
+ [0.0, 0.0, 0.0, 0.0, 0.0, ..., 0.0, 0.0, 0.0, 1.0, 0.0],
+ [0.0, 0.0, 0.0, 0.0, 0.0, ..., 0.0, 0.0, 0.0, 0.0, 0.0],
+ [0.0, 0.0, 0.0, 0.0, 0.0, ..., 1.0, 0.0, 0.0, 0.0, 1.0],
+ [0.0, 0.0, 0.0, 0.0, 1.0, ..., 0.0, 0.0, 0.0, 0.0, 0.0]], shape=[10, 60000], strides=[1, 10], layout=Ff (0xa), const ndim=2)
+Test Accuracy: 97.78 %
