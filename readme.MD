@@ -11,7 +11,7 @@ At the bare minimum, the library will implement the following features:
 - Minimalistic KERAS like implementation that can solve MNIST digit classification problem. Should support forward based network with the following featuers:
   - [x] NN layers (Dense)
   - [x] Mini-batching
-  - [x]Activation (Sigmoid, Tanh, Relu ) 
+  - [x] Activation (Sigmoid, Tanh, Relu ) 
   - SGD 
     - [x] Vanilla
     - [x] Momentum
