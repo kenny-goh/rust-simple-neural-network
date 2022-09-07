@@ -3,17 +3,29 @@
 I have forgotten what I have learned about deep learning two years ago, so this is a curiosity project to relearn deep learning while learning Rust at the same time.
 
 ## Description
-The goal of this project is to develop a deep feed-forward network from the ground up that 
-is good enough to solve the [MNIST classification problem](https://en.wikipedia.org/wiki/MNIST_database) 
-using Rust.
+The goal of this project is to develop a deep feed-forward network from the ground up with Rust that 
+is good enough to solve the [MNIST handwritten digits classification problem](https://en.wikipedia.org/wiki/MNIST_database) with decent accuracy (~98%) and take less than few minutes 
+using CPU. The mnist is a dataset of handwritten digits used by the machine learning community for benchmarking machine learning
+algorithms.
 
-At the bare minimum, the library will implement the following features:
+The mnist dataset consists of 60,000 instances of training data and 10,000 testing images.
 
-- Minimalistic KERAS like implementation that can solve MNIST digit classification problem. Should support deep-forward based network with the following features:
+Below is an example of some digits from the mnist training data.
+
+![Mnist puzzle](./mnist_example.png)
+
+The target is to create a generic feed-forward deep learning framework that can be configured to
+predict problems such as the mnist handwritten digits by running training 
+on training examples in order to learn to approximate the target output, in
+this case whether the digit is a 1 to 9.
+
+To achieve that, I plan to implement the followings:
+
+- Minimal Keras like API with the following features:
   - [x] NN layers (Dense)
   - [x] Mini-batching
   - [x] Activation (Sigmoid, Tanh, Relu, Softmax ) 
-  - SGD 
+  - Stochastic Gradient Descent Algorithm
     - [x] Vanilla
     - [x] Momentum
     - [x] RMSProps
@@ -24,44 +36,14 @@ At the bare minimum, the library will implement the following features:
     - Regularization
       - [x] L2, 
       - [x] Dropout
-  - [x] Can train up to 98% accuracy on MNIST dataset
 
 - Stretch target:
   - Accelerate the training / prediction using GPU acceleration.
 
+## Updates
+- 06/09/22 - I am able to hit 98% accuracy on the mnist dataset after implementing softmax and fine-tuning the parameters to include 20% dropout probability. 
 
-## Toy example to solve XOR problem
-```rust
-
- let mut net = NeuralNet::new(2,
-    &[MetaLayer::Dense(10, Activation::LeakyRelu), 
-      MetaLayer::Dense(1, Activation::Sigmoid)], 
-    &WeightInitStrategy::Xavier);
-
-    let x_predict = Tensor2D::NDArray(array![[0., 0.], [0., 1.], [1., 0.], [1., 1.]].reversed_axes());
-    let y_predict = Tensor2D::NDArray(array![[0.], [1.], [1.], [0.]].reversed_axes());
-
-      
-    let x_train = Tensor2D::NDArray(array![[0., 0.], [0., 1.], [1., 0.], [1., 1.]].reversed_axes());
-    let y_train = Tensor2D::NDArray(array![[0.], [1.], [1.], [0.], [0.]].reversed_axes());
-
-    net.train(&x_train,
-               &y_train,
-               &TrainParameters::default()
-                   .cost(Cost::CrossEntropy)
-                   .learning_rate(0.05)
-                   .batch_size(1)
-                   .optimizer_rms_props(0.9)
-                   .batch_size(4)
-                   .iterations(Some(2000))
-                   .target_stop_condition(Some(99.99999))
-    );
-
-    let predictions = net.predict(&x_predict);
-    println!("Test Accuracy: {} %", NeuralNet::calculate_accuracy(&y, &predictions).to_string().bold());
-```
-
-## Getting Started
+## Getting Started (running the mnist example)
 - Make sure you have Rust installed. Please refer to https://www.rust-lang.org/
 - Open your terminal
 - Check out this project by using the command: git clone git@github.com:kenny-goh/rust-simple-neural-network.git
@@ -142,6 +124,39 @@ Number of iterations: 9100
 Dev Accuracy: 99.195 %
 Test Accuracy: 98.049995 %
 ```
+
+
+## Toy example to solve XOR problem
+```rust
+
+ let mut net = NeuralNet::new(2,
+    &[MetaLayer::Dense(10, Activation::LeakyRelu), 
+      MetaLayer::Dense(1, Activation::Sigmoid)], 
+    &WeightInitStrategy::Xavier);
+
+    let x_predict = Tensor2D::NDArray(array![[0., 0.], [0., 1.], [1., 0.], [1., 1.]].reversed_axes());
+    let y_predict = Tensor2D::NDArray(array![[0.], [1.], [1.], [0.]].reversed_axes());
+
+      
+    let x_train = Tensor2D::NDArray(array![[0., 0.], [0., 1.], [1., 0.], [1., 1.]].reversed_axes());
+    let y_train = Tensor2D::NDArray(array![[0.], [1.], [1.], [0.], [0.]].reversed_axes());
+
+    net.train(&x_train,
+               &y_train,
+               &TrainParameters::default()
+                   .cost(Cost::CrossEntropy)
+                   .learning_rate(0.05)
+                   .batch_size(1)
+                   .optimizer_rms_props(0.9)
+                   .batch_size(4)
+                   .iterations(Some(2000))
+                   .target_stop_condition(Some(99.99999))
+    );
+
+    let predictions = net.predict(&x_predict);
+    println!("Test Accuracy: {} %", NeuralNet::calculate_accuracy(&y, &predictions).to_string().bold());
+```
+
 
 ## Authors
 Kenny Goh

@@ -2,7 +2,7 @@ use ndarray::{arr2, Array2};
 use crate::rust_learn::parameters::TrainParameters;
 use crate::rust_learn::tensor2d::{Tensor2D};
 
-/// A dropout layer.
+
 pub struct DropoutLayer {
     pub probability: f32,
     mask: Tensor2D,
